@@ -114,7 +114,7 @@ module.exports = (app, db) => {
                 ).catch(
                     (err) => {
                         res.status(200).json({
-                            success: true,
+                            success: false,
                             status: 'red',
                             message: 'Что то пошло не так',
                             data: {

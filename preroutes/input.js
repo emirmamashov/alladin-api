@@ -10,7 +10,7 @@ module.exports = (filters) => {
                 }
             }
 
-            validator.async(req.body, constraints).then(
+            validate.async(req.body, constraints).then(
                 (attributes) => {
                     req.body = attributes;
                     next();

@@ -1,7 +1,11 @@
 let express = require('express');
 let router = express.Router();
 
+// validate forms
+let categoryForm = require('../forms/category');
+
 module.exports = (app, db) => {
+    let filters = app.get('filters');
 
     // get all
     router.get('/', (req, res) => {
@@ -36,7 +40,7 @@ module.exports = (app, db) => {
     });
 
     // add new category
-    router.post('/add', (req, res) => {
+    router.post('/add', filters.input.validate(categoryForm), (req, res) => {
         console.log(req.body);
         let newCategory = new db.Category();
         newCategory.name = req.body.name;

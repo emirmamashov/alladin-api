@@ -19,10 +19,12 @@ module.exports = (filters) => {
                     console.log(err);
                     return res.status(200).json({
                         success: false,
-                        message: 'Ошибка',
-                        status: 'red',
+                        message: {
+                            validates: err
+                        },
+                        status: 'yellow',
                         data: {
-                            code: 500,
+                            code: 403,
                             message: err
                         }
                     });

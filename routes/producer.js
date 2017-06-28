@@ -1,7 +1,11 @@
 let express = require('express');
 let router = express.Router();
 
+// validate forms
+let producerForm = require('../forms/producer');
+
 module.exports = (app, db) => {
+    let filters = app.get('filters');
 
     // get all
     router.get('/', (req, res) => {
@@ -36,7 +40,7 @@ module.exports = (app, db) => {
     });
 
     // add new
-    router.post('/add', (req, res) => {
+    router.post('/add', filters.input.validate(producerForm), (req, res) => {
         let newproducer = new db.Producer();
         newproducer.name = req.body.name;
         newproducer.description = req.body.description;

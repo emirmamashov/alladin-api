@@ -30,16 +30,9 @@ module.exports = {
             message: '^Длина наименование должно быть меньше 25символов'
         }
     },
-    parentCategory: {
-
-    },
-    description: {
-
-    },
-    keywords: {
-
-    },
-    author: {
-
+    image: {
+        presence: {
+            message: '^Выберите изображение'
+        },
     }
-};
+}

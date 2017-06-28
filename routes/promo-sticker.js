@@ -1,9 +1,15 @@
 let express = require('express');
 let router = express.Router();
+
 let uploadFile = require('../services/upload');
+
+// validate forms
+let promoStickerForm = require('../forms/promo-sticker');
 
 module.exports = (app, db) => {
     let config = app.get('config');
+    let filters = app.get('filters');
+
     // get all
     router.get('/', (req, res) => {
         db.PromoSticker.find().then(
@@ -38,7 +44,7 @@ module.exports = (app, db) => {
     });
 
     // add new
-    router.post('/add', (req, res) => {
+    router.post('/add', filters.input.validate(promoStickerForm), (req, res) => {
         console.log(req.body);
         uploadFile(req, res).then(
             (file) => {
@@ -85,7 +91,7 @@ module.exports = (app, db) => {
                     message: 'Что пошло не так',
                     data: {
                         code: 500,
-                        message:err
+                        message: err
                     }
                 });
             }

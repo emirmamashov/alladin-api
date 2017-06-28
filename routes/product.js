@@ -4,14 +4,18 @@ let router = express.Router();
 // services
 let uploadFile = require('../services/upload');
 
+// valudate forms
+let productForm = require('../forms/producer');
+
 module.exports = (app, db) => {
     let config = app.get('config');
+    let filters = app.get('filters');
 
     // get all products
     router.get('/', (req, res) => {
         db.Product.find().then(
             (products) => {
-                
+
                 res.status(200).json({
                     success: true,
                     status: 'green',
@@ -74,7 +78,7 @@ module.exports = (app, db) => {
     });
 
     // add new product
-    router.post('/add', (req, res) => {
+    router.post('/add', filters.input.validate(productForm), (req, res) => {
         uploadFile(req, res).then(
             (file) => {
                 console.log(file);

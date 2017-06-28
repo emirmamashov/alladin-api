@@ -11,6 +11,7 @@ module.exports = (app, db) => {
     router.get('/', (req, res) => {
         db.Product.find().then(
             (products) => {
+                
                 res.status(200).json({
                     success: true,
                     status: 'green',

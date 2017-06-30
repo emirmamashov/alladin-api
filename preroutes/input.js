@@ -4,6 +4,7 @@ module.exports = (filters) => {
     filters['input'] = filters['input'] || {};
     filters.input.validate = (constraints) => {
         return (req, res, next) => {
+            console.log('--------filters.input.validate---------');
             for (let idx in req.body) {
                 if (!constraints[idx]) {
                     delete req.body[idx];
@@ -28,7 +29,8 @@ module.exports = (filters) => {
                             message: err
                         }
                     });
-                });
+                }
+            );
         }
     }
 }

@@ -44,11 +44,12 @@ module.exports = (app, db) => {
     });
 
     // add new
-    router.post('/add', filters.input.validate(promoStickerForm), (req, res) => {
+    router.post('/add', (req, res) => {
         console.log(req.body);
         uploadFile(req, res).then(
             (file) => {
                 console.log(file);
+                // filters.input.validate(promoStickerForm);
                 let newPromoSticker = new db.PromoSticker({
                     name: req.body.name,
                     image: '/uploads' + file.path.replace(config.UPLOAD_DIR, '')
@@ -70,6 +71,7 @@ module.exports = (app, db) => {
                     }
                 ).catch(
                     (err) => {
+                        //console.log(err);
                         res.status(200).json({
                             success: false,
                             status: 'red',
@@ -85,15 +87,39 @@ module.exports = (app, db) => {
         ).catch(
             (err) => {
                 console.log(err);
-                res.status(200).json({
-                    success: false,
-                    status: 'red',
-                    message: 'Что пошло не так',
-                    data: {
-                        code: 500,
-                        message: err
-                    }
+                // filters.input.validate(promoStickerForm);
+                let newPromoSticker = new db.PromoSticker({
+                    name: req.body.name
                 });
+                newPromoSticker.save().then(
+                    (promoSticker) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно добавлено',
+                            data: {
+                                code: 201,
+                                message: 'add new',
+                                data: {
+                                    promoSticker: promoSticker
+                                }
+                            }
+                        });
+                    }
+                ).catch(
+                    (err) => {
+                        //console.log(err);
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
             }
         );
     });

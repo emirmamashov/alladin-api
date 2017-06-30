@@ -78,10 +78,11 @@ module.exports = (app, db) => {
     });
 
     // add new product
-    router.post('/add', filters.input.validate(productForm), (req, res) => {
+    router.post('/add', (req, res) => {
         uploadFile(req, res).then(
             (file) => {
-                console.log(file);
+                //console.log(file);
+                //filters.input.validate(productForm);
                 let newProduct = new db.Product({
                     name: req.body.name,
                     htmlH1: req.body.htmlH1,
@@ -95,7 +96,7 @@ module.exports = (app, db) => {
                     priceStock: req.body.priceStock,
                     seoUrl: req.body.seoUrl,
                     promoStickers: req.body.promoStickers,
-                    image: '/uploads' + file.path.replace(config.UPLOAD_DIR, ''),
+                    image: file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '',
                     producer: req.body.producer,
                     category: req.body.category,
                     categories: req.body.categories
@@ -133,15 +134,60 @@ module.exports = (app, db) => {
         ).catch(
             (err) => {
                 console.log(err);
-                res.status(200).json({
+                let name = req.body.name;
+                if (!name) return res.status(200).json({
                     success: false,
-                    status: 'red',
-                    message: 'Что то пошло не так',
+                    status: 'yellow',
+                    message: 'Введите наименование товара',
                     data: {
-                        code: 500,
-                        message: err
+                        code: 403,
+                        message: 'name is null'
                     }
                 });
+                let newProduct = new db.Product({
+                    name: name,
+                    htmlH1: req.body.htmlH1,
+                    htmlTitle: req.body.htmlTitle,
+                    metaDescription: req.body.metaDescription,
+                    metaKeywords: req.body.metaKeywords,
+                    description: req.body.description,
+                    tegs: req.body.tegs,
+                    phone: req.body.phone,
+                    price: req.body.price,
+                    priceStock: req.body.priceStock,
+                    seoUrl: req.body.seoUrl,
+                    promoStickers: req.body.promoStickers,
+                    producer: req.body.producer,
+                    category: req.body.category,
+                    categories: req.body.categories
+                });
+
+                newProduct.save().then(
+                    () => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно',
+                            data: {
+                                code: 200,
+                                message: 'Успешно',
+                                product: product
+                            }
+                        });
+                    }
+                ).catch(
+                    (err) => {
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так',
+                            data: {
+                                code: 200,
+                                message: err
+                            }
+                        });
+                    }
+                );
             }
         );
     });

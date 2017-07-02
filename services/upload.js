@@ -12,7 +12,7 @@ module.exports = (req, res) => {
                 reject(err);
             }
 
-            console.log(req.file);
+            console.log(req.body);
             resolve(req.file);
         });
     });

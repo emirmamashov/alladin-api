@@ -79,27 +79,28 @@ module.exports = (app, db) => {
 
     // add new product
     router.post('/add', (req, res) => {
+        console.log(req.body);
         uploadFile(req, res).then(
             (file) => {
                 //console.log(file);
                 //filters.input.validate(productForm);
                 let newProduct = new db.Product({
-                    name: req.body.name,
-                    htmlH1: req.body.htmlH1,
-                    htmlTitle: req.body.htmlTitle,
-                    metaDescription: req.body.metaDescription,
-                    metaKeywords: req.body.metaKeywords,
-                    description: req.body.description,
-                    tegs: req.body.tegs,
-                    phone: req.body.phone,
-                    price: req.body.price,
-                    priceStock: req.body.priceStock,
-                    seoUrl: req.body.seoUrl,
-                    promoStickers: req.body.promoStickers,
+                    name: req.body.name || '',
+                    htmlH1: req.body.htmlH1 || '',
+                    htmlTitle: req.body.htmlTitle || '',
+                    metaDescription: req.body.metaDescription || '',
+                    metaKeywords: req.body.metaKeywords || '',
+                    description: req.body.description || '',
+                    tegs: req.body.tegs || '',
+                    phone: req.body.phone || null,
+                    price: req.body.price || null,
+                    priceStock: req.body.priceStock || null,
+                    seoUrl: req.body.seoUrl ? req.body.seoUrl : '',
+                    promoStickers: req.body.promoStickers || [],
                     image: file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '',
-                    producer: req.body.producer,
-                    category: req.body.category,
-                    categories: req.body.categories
+                    producer: req.body.producer || '',
+                    category: req.body.category || '',
+                    categories: req.body.categories || []
                 });
 
                 console.log(newProduct);
@@ -113,7 +114,9 @@ module.exports = (app, db) => {
                             data: {
                                 code: 200,
                                 message: 'Успешно',
-                                product: product
+                                data: {
+                                    product: newProduct
+                                }
                             }
                         });
                     }
@@ -145,21 +148,21 @@ module.exports = (app, db) => {
                     }
                 });
                 let newProduct = new db.Product({
-                    name: name,
-                    htmlH1: req.body.htmlH1,
-                    htmlTitle: req.body.htmlTitle,
-                    metaDescription: req.body.metaDescription,
-                    metaKeywords: req.body.metaKeywords,
-                    description: req.body.description,
-                    tegs: req.body.tegs,
-                    phone: req.body.phone,
-                    price: req.body.price,
-                    priceStock: req.body.priceStock,
-                    seoUrl: req.body.seoUrl,
-                    promoStickers: req.body.promoStickers,
-                    producer: req.body.producer,
-                    category: req.body.category,
-                    categories: req.body.categories
+                    name: req.body.name || '',
+                    htmlH1: req.body.htmlH1 || '',
+                    htmlTitle: req.body.htmlTitle || '',
+                    metaDescription: req.body.metaDescription || '',
+                    metaKeywords: req.body.metaKeywords || '',
+                    description: req.body.description || '',
+                    tegs: req.body.tegs || '',
+                    phone: req.body.phone || null,
+                    price: req.body.price || null,
+                    priceStock: req.body.priceStock || null,
+                    seoUrl: req.body.seoUrl || '',
+                    promoStickers: req.body.promoStickers || [],
+                    producer: req.body.producer || '',
+                    category: req.body.category || '',
+                    categories: req.body.categories || []
                 });
 
                 newProduct.save().then(
@@ -171,7 +174,9 @@ module.exports = (app, db) => {
                             data: {
                                 code: 200,
                                 message: 'Успешно',
-                                product: product
+                                data: {
+                                    product: newProduct
+                                }
                             }
                         });
                     }
@@ -224,7 +229,7 @@ module.exports = (app, db) => {
                         product.priceStock = req.body.priceStock;
                         product.seoUrl = req.body.seoUrl;
                         product.promoStickers = req.body.promoStickers;
-                        product.image = '/uploads' + file.path.replace(config.UPLOAD_DIR, '');
+                        product.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
                         product.producer = req.body.producer;
                         product.category = req.body.category;
                         product.categories = req.body.categories;

@@ -41,13 +41,9 @@ module.exports = (app, db) => {
 
     // add new category
     router.post('/add', filters.input.validate(categoryForm), (req, res) => {
-        let newCategory = new db.Category({
-            name: req.body.name,
-            parentCategory: req.body.parentCategory,
-            description: req.body.description,
-            keywords: req.body.keywords,
-            author: req.body.author
-        });
+        console.log('-------------add new category ----------------------');
+        console.log(req.body);
+        let newCategory = new db.Category(req.body);
 
         newCategory.save().then(
             (category) => {

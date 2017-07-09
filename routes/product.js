@@ -79,7 +79,6 @@ module.exports = (app, db) => {
 
     // add new product
     router.post('/add', (req, res) => {
-        console.log(req.body);
         uploadFile(req, res).then(
             (file) => {
                 let name = req.body.name;
@@ -93,6 +92,7 @@ module.exports = (app, db) => {
                     }
                 });
 
+                console.log(req.body);
                 let newProduct = new db.Product({
                     name: name,
                     htmlH1: req.body.htmlH1 || '',
@@ -107,8 +107,8 @@ module.exports = (app, db) => {
                     seoUrl: req.body.seoUrl ? req.body.seoUrl : '',
                     promoStickers: req.body.promoStickers || [],
                     image: file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '',
-                    producer: req.body.producer || '',
-                    category: req.body.category || '',
+                    producerId: req.body.producerId || null,
+                    categoryId: req.body.categoryId || null,
                     categories: req.body.categories || []
                 });
 
@@ -169,8 +169,8 @@ module.exports = (app, db) => {
                     priceStock: req.body.priceStock || null,
                     seoUrl: req.body.seoUrl || '',
                     promoStickers: req.body.promoStickers || [],
-                    producer: req.body.producer || '',
-                    category: req.body.category || '',
+                    producerId: req.body.producerId || null,
+                    categoryId: req.body.categoryId || null,
                     categories: req.body.categories || []
                 });
 
@@ -249,8 +249,8 @@ module.exports = (app, db) => {
                         product.seoUrl = req.body.seoUrl;
                         product.promoStickers = req.body.promoStickers;
                         product.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
-                        product.producer = req.body.producer;
-                        product.category = req.body.category;
+                        product.producerId = req.body.producerId;
+                        product.categoryId = req.body.categoryId;
                         product.categories = req.body.categories;
 
                         product.save().then(
@@ -340,8 +340,8 @@ module.exports = (app, db) => {
                         product.seoUrl = req.body.seoUrl;
                         product.promoStickers = req.body.promoStickers;
                         product.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
-                        product.producer = req.body.producer;
-                        product.category = req.body.category;
+                        product.producerId = req.body.producerId;
+                        product.categoryId = req.body.categoryId;
                         product.categories = req.body.categories;
 
                         product.save().then(

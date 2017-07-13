@@ -4,8 +4,12 @@ let router = express.Router();
 // validate forms
 let categoryForm = require('../forms/category');
 
+// services
+let uploadFile = require('../services/upload');
+
 module.exports = (app, db) => {
     let filters = app.get('filters');
+    let config = app.get('config');
 
     // get all
     router.get('/', (req, res) => {
@@ -40,37 +44,71 @@ module.exports = (app, db) => {
     });
 
     // add new category
-    router.post('/add', filters.input.validate(categoryForm), (req, res) => {
-        console.log('-------------add new category ----------------------');
+    router.post('/add', (req, res) => {
+        console.log('------------- add new category --------------');
         console.log(req.body);
-        let newCategory = new db.Category(req.body);
-
-        newCategory.save().then(
-            (category) => {
-                res.status(200).json({
-                    success: true,
-                    message: 'Успешно',
-                    status: 'green',
-                    data: {
-                        code: 200,
-                        message: 'Добавлено',
-                        data: {
-                            category: category
+        uploadFile(req, res).then(
+            (file) => {
+                let newCategory = new db.Category(req.body);
+                newCategory.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
+                newCategory.save().then(
+                    (category) => {
+                        res.status(200).json({
+                            success: true,
+                            message: 'Успешно',
+                            status: 'green',
+                            data: {
+                                code: 200,
+                                message: 'Добавлено',
+                                data: {
+                                    category: category
+                                }
+                            }
+                        });
+                    }).catch(
+                        (err) => {
+                            res.status(200).json({
+                                success: false,
+                                message: 'Что то пошло не так',
+                                status: 'red',
+                                data: {
+                                    code: 500,
+                                    message: err
+                                }
+                            });
                         }
-                    }
-                });
-            }
-        ).catch(
+                    );
+        }).catch(
             (err) => {
-                res.status(200).json({
-                    success: false,
-                    message: 'Что то пошло не так',
-                    status: 'red',
-                    data: {
-                        code: 500,
-                        message: err
-                    }
-                });
+                console.log(err);
+                let newCategory = new db.Category(req.body);
+                newCategory.save().then(
+                    (category) => {
+                        res.status(200).json({
+                            success: true,
+                            message: 'Успешно',
+                            status: 'green',
+                            data: {
+                                code: 200,
+                                message: 'Добавлено',
+                                data: {
+                                    category: category
+                                }
+                            }
+                        });
+                    }).catch(
+                        (err) => {
+                            res.status(200).json({
+                                success: false,
+                                message: 'Что то пошло не так',
+                                status: 'red',
+                                data: {
+                                    code: 500,
+                                    message: err
+                                }
+                            });
+                        }
+                    );
             }
         );
     });

@@ -49,7 +49,9 @@ module.exports = (app, db) => {
         console.log(req.body);
         uploadFile(req, res).then(
             (file) => {
+                console.dir(file);
                 let newCategory = new db.Category(req.body);
+                newCategory.parentCategory = newCategory.parentCategory || null;
                 newCategory.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
                 newCategory.save().then(
                     (category) => {
@@ -82,6 +84,7 @@ module.exports = (app, db) => {
             (err) => {
                 console.log(err);
                 let newCategory = new db.Category(req.body);
+                newCategory.parentCategory = newCategory.parentCategory || null;
                 newCategory.save().then(
                     (category) => {
                         res.status(200).json({

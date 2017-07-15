@@ -1,8 +1,13 @@
 let express = require('express');
 let router = express.Router();
+let XLSX = require('xlsx');
+let mongoose = require('mongoose');
+let ObjectId = mongoose.Types.ObjectId;
+
 
 // services
 let uploadFile = require('../services/upload');
+let translitService = require('../services/translit');
 
 // valudate forms
 let productForm = require('../forms/producer');
@@ -389,6 +394,119 @@ module.exports = (app, db) => {
                 );
             }
         );
+    });
+
+    router.post('/import', (req, res) => {
+        let multiparty = require('multiparty');
+        let form = new multiparty.Form();
+
+        form.parse(req, (err, fields, files) => {
+            console.log(files.file[0]);
+            let fileUrl = files.file[0].path;
+
+            /* Call XLSX */
+            let workbook = XLSX.readFile(fileUrl);
+            //console.log(workbook);
+            let first_sheet_name = workbook.SheetNames[0];
+            let address_of_cell = 'A1';
+
+            /* Get worksheet */
+            let worksheet = workbook.Sheets[first_sheet_name];
+
+            /* Find desired cell */
+            let desired_cell = worksheet[address_of_cell];
+
+            /* Get the value */
+            let desired_value = desired_cell.v;
+            let resultsExelJson = XLSX.utils.sheet_to_json(worksheet,{raw:true});
+            console.log(resultsExelJson);
+            
+            let productsPromise = [];
+            let importFailedProducts = [];
+            resultsExelJson.forEach((product) => {
+                let name = product['Название товара'];
+                let translit_name = translitService.translitToLatin(name);
+                let translit_for_seo = translitService.translitToLatinForSeoUrl(name);
+                if (name) {
+                    console.log(mongoose.Types.ObjectId.isValid('53cb6b9b4f4ddef1ad47f943'));
+                    let product_categoryIds_string = product['ID категорий где будет отображаться товар, через запятую'] || '';
+                    let categoryIds = [];
+                    if (product_categoryIds_string) {
+                        categoryIds = product_categoryIds_string.split(',');
+                    }
+                    categoryIds.forEach((categoryId) => {
+                        if (!ObjectId.isValid(categoryId)) {
+                            categoryIds = categoryIds.filter(x => x !== categoryId);
+                        }
+                    });
+
+                    let newProductValid = {
+                        name: product['Название товара'] || '',
+                        htmlH1: translit_name,
+                        htmlTitle: translit_name,
+                        metaDescription: translit_name,
+                        metaKeywords: translit_name,
+                        description: translit_name,
+                        tegs: translit_name + ',' || '',
+                        phone: product['Телефон'] || 000,
+                        price: product['Цена'] || 0,
+                        priceStock: product['Цена акции'] || 0,
+                        seoUrl: translit_for_seo,
+                        producerId: product['ID производителя'] || '',
+                        categoryId: product['ID категория'] || '',
+                        categories: categoryIds
+                    }
+                    console.log(newProductValid);
+                    if (ObjectId.isValid(newProductValid.producerId) && ObjectId.isValid(newProductValid.categoryId)) {
+                        let newProduct = new db.Product(newProductValid);
+                        productsPromise.push(newProduct.save());
+                    } else {
+                        console.log('--name is null');
+                        importFailedProducts.push({
+                            product: product,
+                            error: 'ID производителя или ID категорий неправильного формата!'
+                        });
+                    }
+                } else {
+                    console.log('--name is null');
+                    importFailedProducts.push({
+                        product: product,
+                        error: 'Наименование отсутствует или неправильного формата'
+                    });
+                }
+            });
+
+            Promise.all(productsPromise).then(
+                (products) => {
+                    res.status(200).json({
+                        success: true,
+                        status: 'green',
+                        message: 'Успешно',
+                        data: {
+                            code: 200,
+                            message: 'ok',
+                            data: {
+                                import_products_count: products.length,
+                                import_failed_products: importFailedProducts
+                            }
+                        }
+                    });
+                }
+            ).catch(
+                (err) => {
+                    console.log(err);
+                    res.status(200).json({
+                        success: false,
+                        status: 'red',
+                        message: 'Что то пошло не так',
+                        data: {
+                            code: 500,
+                            message: err
+                        }
+                    });
+                }
+            );
+        });
     });
 
     app.use('/products', router);

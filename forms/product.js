@@ -75,11 +75,6 @@ module.exports = {
     promoStickerId: {
 
     },
-    image: {
-        presence: {
-            message: '^Выберите изображение'
-        }
-    },
     producerId: {
 
     },

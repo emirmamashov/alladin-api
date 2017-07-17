@@ -10,7 +10,7 @@ let uploadFile = require('../services/upload');
 let translitService = require('../services/translit');
 
 // valudate forms
-let productForm = require('../forms/producer');
+let productForm = require('../forms/product');
 
 module.exports = (app, db) => {
     let config = app.get('config');
@@ -20,19 +20,35 @@ module.exports = (app, db) => {
     router.get('/', (req, res) => {
         db.Product.find().then(
             (products) => {
-
-                res.status(200).json({
-                    success: true,
-                    status: 'green',
-                    message: 'Успешно получено',
-                    data: {
-                        code: 200,
-                        message: 'Успешно получено',
-                        data: {
-                            products: products
-                        }
+                db.Photo.find().then(
+                    (photos) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно',
+                            data: {
+                                code: 200,
+                                message: 'ok',
+                                data: {
+                                    products: products,
+                                    photos: photos
+                                }
+                            }
+                        });
                     }
-                });
+                ).catch(
+                    (err) => {
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так(',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
             }
         ).catch(
             (err) => {
@@ -83,130 +99,57 @@ module.exports = (app, db) => {
     });
 
     // add new product
-    router.post('/add', (req, res) => {
-        uploadFile(req, res).then(
-            (file) => {
-                let name = req.body.name;
-                if (!name) return res.status(200).json({
-                    success: false,
-                    status: 'yellow',
-                    message: 'Введите наименование товара',
+    router.post('/add', filters.input.validate(productForm), (req, res) => {
+        let name = req.body.name;
+
+        console.log(req.body);
+        let newProduct = new db.Product({
+            name: name,
+            htmlH1: req.body.htmlH1 || '',
+            htmlTitle: req.body.htmlTitle || '',
+            metaDescription: req.body.metaDescription || '',
+            metaKeywords: req.body.metaKeywords || '',
+            description: req.body.description || '',
+            tegs: req.body.tegs || '',
+            phone: req.body.phone || null,
+            price: req.body.price || null,
+            priceStock: req.body.priceStock || null,
+            seoUrl: req.body.seoUrl ? req.body.seoUrl : '',
+            promoStickers: req.body.promoStickers || [],
+            photos: req.body.photos,
+            producerId: req.body.producerId || null,
+            categoryId: req.body.categoryId || null,
+            categories: req.body.categories || []
+        });
+
+        console.log(newProduct);
+
+        newProduct.save().then(
+            () => {
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно',
                     data: {
-                        code: 403,
-                        message: 'name is null'
+                        code: 200,
+                        message: 'Успешно',
+                        data: {
+                            product: newProduct
+                        }
                     }
                 });
-
-                console.log(req.body);
-                let newProduct = new db.Product({
-                    name: name,
-                    htmlH1: req.body.htmlH1 || '',
-                    htmlTitle: req.body.htmlTitle || '',
-                    metaDescription: req.body.metaDescription || '',
-                    metaKeywords: req.body.metaKeywords || '',
-                    description: req.body.description || '',
-                    tegs: req.body.tegs || '',
-                    phone: req.body.phone || null,
-                    price: req.body.price || null,
-                    priceStock: req.body.priceStock || null,
-                    seoUrl: req.body.seoUrl ? req.body.seoUrl : '',
-                    promoStickers: req.body.promoStickers || [],
-                    image: file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '',
-                    producerId: req.body.producerId || null,
-                    categoryId: req.body.categoryId || null,
-                    categories: req.body.categories || []
-                });
-
-                console.log(newProduct);
-
-                newProduct.save().then(
-                    () => {
-                        res.status(200).json({
-                            success: true,
-                            status: 'green',
-                            message: 'Успешно',
-                            data: {
-                                code: 200,
-                                message: 'Успешно',
-                                data: {
-                                    product: newProduct
-                                }
-                            }
-                        });
-                    }
-                ).catch(
-                    (err) => {
-                        res.status(200).json({
-                            success: false,
-                            status: 'red',
-                            message: 'Что то пошло не так',
-                            data: {
-                                code: 200,
-                                message: err
-                            }
-                        });
-                    }
-                );
             }
         ).catch(
             (err) => {
-                console.log(err);
-                let name = req.body.name;
-                if (!name) return res.status(200).json({
+                res.status(200).json({
                     success: false,
-                    status: 'yellow',
-                    message: 'Введите наименование товара',
+                    status: 'red',
+                    message: 'Что то пошло не так',
                     data: {
-                        code: 403,
-                        message: 'name is null'
+                        code: 200,
+                        message: err
                     }
                 });
-                let newProduct = new db.Product({
-                    name: req.body.name || '',
-                    htmlH1: req.body.htmlH1 || '',
-                    htmlTitle: req.body.htmlTitle || '',
-                    metaDescription: req.body.metaDescription || '',
-                    metaKeywords: req.body.metaKeywords || '',
-                    description: req.body.description || '',
-                    tegs: req.body.tegs || '',
-                    phone: req.body.phone || null,
-                    price: req.body.price || null,
-                    priceStock: req.body.priceStock || null,
-                    seoUrl: req.body.seoUrl || '',
-                    promoStickers: req.body.promoStickers || [],
-                    producerId: req.body.producerId || null,
-                    categoryId: req.body.categoryId || null,
-                    categories: req.body.categories || []
-                });
-
-                newProduct.save().then(
-                    () => {
-                        res.status(200).json({
-                            success: true,
-                            status: 'green',
-                            message: 'Успешно',
-                            data: {
-                                code: 200,
-                                message: 'Успешно',
-                                data: {
-                                    product: newProduct
-                                }
-                            }
-                        });
-                    }
-                ).catch(
-                    (err) => {
-                        res.status(200).json({
-                            success: false,
-                            status: 'red',
-                            message: 'Что то пошло не так',
-                            data: {
-                                code: 200,
-                                message: err
-                            }
-                        });
-                    }
-                );
             }
         );
     });

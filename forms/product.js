@@ -48,8 +48,11 @@ module.exports = {
     tegs: {
 
     },
+    photos: {
+        presence: true
+    },
     phone: {
-        onlyInteger: {
+        numericality: {
             message: '^Телефон - введите только цифры'
         }
     },
@@ -57,12 +60,12 @@ module.exports = {
         presence: {
             message: '^Цена - объязательное поле'
         },
-        onlyInteger: {
+        numericality: {
             message: '^Цена - введите только число'
         }
     },
     priceStock: {
-        onlyInteger: {
+        numericality: {
             message: '^Цена акция - введите только число'
         }
     },

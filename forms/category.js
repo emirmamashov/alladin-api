@@ -41,5 +41,11 @@ module.exports = {
     },
     author: {
 
+    },
+    viewInMenu: {
+
+    },
+    photo: {
+        
     }
 };

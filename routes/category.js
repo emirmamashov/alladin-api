@@ -162,5 +162,73 @@ module.exports = (app, db) => {
         );
     });
 
+    router.put('/update/:id', filters.input.validate(categoryForm), (req, res) => {
+        let _id = req.params.id;
+        db.Category.findById(_id).then(
+            (category) => {
+                if (!category) {
+                    return res.status(200).json({
+                        success: false,
+                        message: 'Категория не найдено',
+                        status: 'yellow',
+                        data: {
+                            code: 404,
+                            message: 'category not found'
+                        }
+                    });
+                }
+
+                category.name = req.body.name ? req.body.name : category.name;
+                category.parentCategory = req.body.parentCategory ? req.body.parentCategory : category.parentCategory;
+                category.description = req.body.description ? req.body.description : category.description;
+                category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
+                category.author = req.body.author ? req.body.author : category.author;
+                category.photo = req.body.photo ? req.body.photo : category.photo;
+                category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
+
+                category.save().then(
+                    (updatedCategory) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Данные категории успешно обнавлены',
+                            data: {
+                                code: 200,
+                                message: 'Updated successful',
+                                category: updatedCategory
+                            }
+                        });
+                    }
+                ).catch(
+                    (err) => {
+                        console.log(err);
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'что то пошло не так',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
+    });
+
     app.use('/categories', router);
 }

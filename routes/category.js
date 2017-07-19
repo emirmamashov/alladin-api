@@ -162,6 +162,7 @@ module.exports = (app, db) => {
         );
     });
 
+    // update category data
     router.put('/update/:id', filters.input.validate(categoryForm), (req, res) => {
         let _id = req.params.id;
         db.Category.findById(_id).then(
@@ -195,7 +196,9 @@ module.exports = (app, db) => {
                             data: {
                                 code: 200,
                                 message: 'Updated successful',
-                                category: updatedCategory
+                                data: {
+                                    category: updatedCategory
+                                }
                             }
                         });
                     }

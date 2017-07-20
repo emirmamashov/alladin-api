@@ -15,15 +15,35 @@ module.exports = (app, db) => {
     let filters = app.get('filters');
 
     router.get('/', (req, res) => {
-        res.status(200).json({
-            success: true,
-            message: 'ok',
-            status: 'green',
-            data: {
-                code: 200,
-                message: 'ok'
+        db.Photo.find().then(
+            (photos) => {
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно получено',
+                    data: {
+                        code: 200,
+                        message: 'get all Photos',
+                        data: {
+                            photos: photos
+                        }
+                    }
+                });
             }
-        });
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
     });
 
     router.post('/add', (req, res) => {

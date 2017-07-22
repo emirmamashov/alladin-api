@@ -72,7 +72,7 @@ module.exports = (app, db) => {
     });
 
     // add new category
-    router.post('/add', (req, res) => {
+    router.post('/add', filters.input.validate(categoryForm), (req, res) => {
         console.log('------------- add new category --------------');
         console.log(req.body);
         let newCategory = new db.Category(req.body);

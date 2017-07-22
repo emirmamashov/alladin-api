@@ -13,5 +13,11 @@ module.exports = {
     },
     photos: {
 
+    },
+    buttonLink: {
+        
+    },
+    buttonName: {
+        
     }
 };

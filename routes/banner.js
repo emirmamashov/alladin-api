@@ -144,6 +144,12 @@ module.exports = (app, db) => {
 
                 banner.name = req.body.name ? req.body.name : banner.name;
                 banner.photo = req.body.photo ? req.body.photo : banner.photo;
+                if (banner.buttonLink || req.body.buttonLink) {
+                    banner.buttonLink = req.body.buttonLink ? req.body.buttonLink : category.buttonLink;
+                }
+                if (banner.buttonName || req.body.buttonName) {
+                    banner.buttonName = req.body.buttonName ? req.body.buttonName : category.buttonName;
+                }
 
                 banner.save().then(
                     (updatedBanner) => {

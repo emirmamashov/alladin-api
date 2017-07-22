@@ -263,7 +263,8 @@ module.exports = (app, db) => {
                 category.description = req.body.description ? req.body.description : category.description;
                 category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
                 category.author = req.body.author ? req.body.author : category.author;
-                category.photo = req.body.photo ? req.body.photo : category.photo;
+                if (category.photo || req.body.photo) category.photo = req.body.photo ? req.body.photo : category.photo;
+                if (category.banner || req.body.banner)category.banner = req.body.banner ? req.body.banner : category.banner;
                 category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
 
                 category.save().then(

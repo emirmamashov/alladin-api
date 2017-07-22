@@ -22,25 +22,60 @@ module.exports = (app, db) => {
                     }
                 });
 
-                db.Photo.find({_id: {$in: photoIds}}).then(
-                    (photos) => {
-                        categories.forEach((category) => {
-                            let categoryPhotoIdString = category.photo ? category.photo.toString() : '';
-                            category.photo = photos.filter(x => x._id.toString() === categoryPhotoIdString)[0] || {};
-                        });
+                let bannerIds = [];
+                categories.forEach((category) => {
+                    if (category.banner) {
+                        bannerIds.push(category.banner);
+                    }
+                });
 
-                        res.status(200).json({
-                            success: true,
-                            status: 'green',
-                            message: 'Успешно',
-                            data: {
-                                code: 200,
-                                message: 'Успешно',
-                                data: {
-                                    categories: categories
-                                }
+                db.Banner.find({_id: {$in: bannerIds}}).then(
+                    (banners) => {
+                        banners.forEach((banner) => {
+                            if (banner.photo) {
+                                photoIds.push(banner.photo);
                             }
                         });
+                        db.Photo.find({_id: {$in: photoIds}}).then(
+                            (photos) => {
+                                banners.forEach((banner) => {
+                                    let bannerPhotoIdString = banner.photo ? banner.photo.toString() : '';
+                                    banner.photo = photos.filter(x => x._id.toString() === bannerPhotoIdString)[0] || {};
+                                });
+
+                                categories.forEach((category) => {
+                                    let categoryPhotoIdString = category.photo ? category.photo.toString() : '';
+                                    let categoryBannerIdString = category.banner ? category.banner.toString() : '';
+                                    category.photo = photos.filter(x => x._id.toString() === categoryPhotoIdString)[0] || {};
+                                    category.banner = banners.filter(x => x._id.toString() === categoryBannerIdString)[0] || {};
+                                });
+
+                                res.status(200).json({
+                                    success: true,
+                                    status: 'green',
+                                    message: 'Успешно',
+                                    data: {
+                                        code: 200,
+                                        message: 'Успешно',
+                                        data: {
+                                            categories: categories
+                                        }
+                                    }
+                                });
+                            }
+                        ).catch(
+                            (err) => {
+                                res.status(200).json({
+                                    success: false,
+                                    status: 'red',
+                                    message: 'Что то пошло не так',
+                                    data: {
+                                        code: 500,
+                                        message: err
+                                    }
+                                });
+                            }
+                        );
                     }
                 ).catch(
                     (err) => {
@@ -79,18 +114,72 @@ module.exports = (app, db) => {
         newCategory.parentCategory = newCategory.parentCategory || null;
         newCategory.save().then(
             (category) => {
-                res.status(200).json({
-                    success: true,
-                    message: 'Успешно',
-                    status: 'green',
-                    data: {
-                        code: 200,
-                        message: 'Добавлено',
-                        data: {
-                            category: category
+
+                let photoIds = [];
+                if (category.photo) {
+                    photoIds.push(category.photo);
+                }
+
+                let bannerId = '';
+                if (category.banner) {
+                    bannerId = category.banner;
+                }
+
+                db.Banner.findById(bannerId).then(
+                    (banner) => {
+                        if (banner.photo) {
+                            photoIds.push(banner.photo);
                         }
+                        db.Photo.find({_id: {$in: photoIds}}).then(
+                            (photos) => {
+                                let bannerPhotoIdString = banner.photo ? banner.photo.toString() : '';
+                                banner.photo = photos.filter(x => x._id.toString() === bannerPhotoIdString)[0] || {};
+
+                                let categoryPhotoIdString = category.photo ? category.photo.toString() : '';
+                                let categoryBannerIdString = category.banner ? category.banner.toString() : '';
+                                category.photo = photos.filter(x => x._id.toString() === categoryPhotoIdString)[0] || {};
+                                category.banner = banner;
+
+                                res.status(200).json({
+                                    success: true,
+                                    status: 'green',
+                                    message: 'Успешно',
+                                    data: {
+                                        code: 200,
+                                        message: 'Успешно',
+                                        data: {
+                                            category: category
+                                        }
+                                    }
+                                });
+                            }
+                        ).catch(
+                            (err) => {
+                                res.status(200).json({
+                                    success: false,
+                                    status: 'red',
+                                    message: 'Что то пошло не так',
+                                    data: {
+                                        code: 500,
+                                        message: err
+                                    }
+                                });
+                            }
+                        );
                     }
-                });
+                ).catch(
+                    (err) => {
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
             }).catch(
                 (err) => {
                     res.status(200).json({

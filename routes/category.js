@@ -15,18 +15,46 @@ module.exports = (app, db) => {
     router.get('/', (req, res) => {
         db.Category.find().then(
             (categories) => {
-                res.status(200).json({
-                    success: true,
-                    status: 'green',
-                    message: 'Успешно',
-                    data: {
-                        code: 200,
-                        message: 'Успешно',
-                        data: {
-                            categories: categories
-                        }
+                let photoIds = [];
+                categories.forEach((category) => {
+                    if (category.photo) {
+                        photoIds.push(category.photo);
                     }
                 });
+
+                db.Photo.find({_id: {$in: photoIds}}).then(
+                    (photos) => {
+                        categories.forEach((category) => {
+                            let categoryPhotoIdString = category.photo ? category.photo.toString() : '';
+                            category.photo = photos.filter(x => x._id.toString() === categoryPhotoIdString)[0] || {};
+                        });
+
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно',
+                            data: {
+                                code: 200,
+                                message: 'Успешно',
+                                data: {
+                                    categories: categories
+                                }
+                            }
+                        });
+                    }
+                ).catch(
+                    (err) => {
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
             }
         ).catch(
             (err) => {
@@ -47,73 +75,35 @@ module.exports = (app, db) => {
     router.post('/add', (req, res) => {
         console.log('------------- add new category --------------');
         console.log(req.body);
-        uploadFile(req, res).then(
-            (file) => {
-                console.dir(file);
-                let newCategory = new db.Category(req.body);
-                newCategory.parentCategory = newCategory.parentCategory || null;
-                newCategory.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
-                newCategory.save().then(
-                    (category) => {
-                        res.status(200).json({
-                            success: true,
-                            message: 'Успешно',
-                            status: 'green',
-                            data: {
-                                code: 200,
-                                message: 'Добавлено',
-                                data: {
-                                    category: category
-                                }
-                            }
-                        });
-                    }).catch(
-                        (err) => {
-                            res.status(200).json({
-                                success: false,
-                                message: 'Что то пошло не так',
-                                status: 'red',
-                                data: {
-                                    code: 500,
-                                    message: err
-                                }
-                            });
+        let newCategory = new db.Category(req.body);
+        newCategory.parentCategory = newCategory.parentCategory || null;
+        newCategory.save().then(
+            (category) => {
+                res.status(200).json({
+                    success: true,
+                    message: 'Успешно',
+                    status: 'green',
+                    data: {
+                        code: 200,
+                        message: 'Добавлено',
+                        data: {
+                            category: category
                         }
-                    );
-        }).catch(
-            (err) => {
-                console.log(err);
-                let newCategory = new db.Category(req.body);
-                newCategory.parentCategory = newCategory.parentCategory || null;
-                newCategory.save().then(
-                    (category) => {
-                        res.status(200).json({
-                            success: true,
-                            message: 'Успешно',
-                            status: 'green',
-                            data: {
-                                code: 200,
-                                message: 'Добавлено',
-                                data: {
-                                    category: category
-                                }
-                            }
-                        });
-                    }).catch(
-                        (err) => {
-                            res.status(200).json({
-                                success: false,
-                                message: 'Что то пошло не так',
-                                status: 'red',
-                                data: {
-                                    code: 500,
-                                    message: err
-                                }
-                            });
+                    }
+                });
+            }).catch(
+                (err) => {
+                    res.status(200).json({
+                        success: false,
+                        message: 'Что то пошло не так',
+                        status: 'red',
+                        data: {
+                            code: 500,
+                            message: err
                         }
-                    );
-            }
-        );
+                    });
+                }
+            );
     });
 
     // add categories

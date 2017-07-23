@@ -3,17 +3,33 @@ let config = require('../config');
 let storage = require('./storage');
 
 multer = multer({ storage: storage });
-let upload = multer.single('file');
+let uploadOne = multer.single('file');
+let uploadMultiple = multer.array('file');
 
-module.exports = (req, res) => {
-    return new Promise((resolve, reject) => {
-        upload(req, res, (err) => {
-            if (err) {
-                reject(err);
-            }
+module.exports = {
+    multiple(req, res) {
+        return new Promise((resolve, reject) => {
+            uploadMultiple(req, res, (err) => {
+                if (err) {
+                    reject(err);
+                }
 
-            console.log(req.body);
-            resolve(req.file);
+                console.log(req.body);
+                resolve(req.files);
+            });
         });
-    });
+    },
+
+    one(req, res) {
+        return new Promise((resolve, reject) => {
+            uploadOne(req, res, (err) => {
+                if (err) {
+                    reject(err);
+                }
+
+                console.log(req.body);
+                resolve(req.file);
+            });
+        });
+    }
 }

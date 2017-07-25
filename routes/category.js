@@ -257,5 +257,68 @@ module.exports = (app, db) => {
         );
     });
 
+    router.delete('/remove/:id', (req, res) => {
+        let _id = req.params.id;
+        if(!_id || !ObjectId.isValid(_id)) {
+            res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметры неправильного формата',
+                data: {
+                    code: 403,
+                    message: 'Parameter not valid'
+                }
+            });
+        }
+
+        db.Category.findByIdAndRemove(_id).then(
+            (category) => {
+                if(!category) {
+                    res.status(200).json({
+                        success: false,
+                        status: 'yellow',
+                        message: 'Не найдено',
+                        data: {
+                            code: 404,
+                            message: 'not found'
+                        }
+                    });
+                }
+
+                if (category.images && category.images.length > 0) {
+                    category.images.forEach((url) => {
+                        photoService.remove(url);
+                    });
+                }
+
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно удалено',
+                    data: {
+                        code: 200,
+                        message: 'Success delete category',
+                        data: {
+                            category: category
+                        }
+                    }
+                });
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
+    });
+
     app.use('/categories', router);
 }

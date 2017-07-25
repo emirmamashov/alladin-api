@@ -37,7 +37,7 @@ module.exports = {
 
     remove(url) {
         if (url) {
-            fs.unlinkSync(config.STATIC_DIR + photo.url);
+            fs.unlink(config.STATIC_DIR + url);
         }
     }
 }

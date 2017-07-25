@@ -3,6 +3,7 @@ module.exports = {
     DB_URL: process.env.DB_URL || 'mongodb://localhost/alladin',
     UPLOAD_DIR: __dirname + '/public/uploads',
     secret: 'asddpfosjkgnalskdoierj',
+    STATIC_DIR: __dirname + '/public',
     Translit_alhabets: {
         'А': 'A',
         'а': 'a',

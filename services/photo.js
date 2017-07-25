@@ -3,13 +3,15 @@ let config = require('../config');
 let storage = require('./storage');
 
 multer = multer({ storage: storage });
-let uploadOne = multer.single('file');
-let uploadMultiple = multer.array('file');
+let singleUpload = multer.single('file');
+let multipleUpload = multer.array('file');
+
+let fs = require('fs');
 
 module.exports = {
-    multiple(req, res) {
+    uploadMultiple(req, res) {
         return new Promise((resolve, reject) => {
-            uploadMultiple(req, res, (err) => {
+            multipleUpload(req, res, (err) => {
                 if (err) {
                     reject(err);
                 }
@@ -20,9 +22,9 @@ module.exports = {
         });
     },
 
-    one(req, res) {
+    uploadOne(req, res) {
         return new Promise((resolve, reject) => {
-            uploadOne(req, res, (err) => {
+            singleUpload(req, res, (err) => {
                 if (err) {
                     reject(err);
                 }
@@ -31,5 +33,11 @@ module.exports = {
                 resolve(req.file);
             });
         });
+    },
+
+    remove(url) {
+        if (url) {
+            fs.unlinkSync(config.STATIC_DIR + photo.url);
+        }
     }
 }

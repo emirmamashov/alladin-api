@@ -7,7 +7,7 @@ let ObjectId = mongoose.Types.ObjectId;
 let bannerForm = require('../forms/banner');
 
 // services
-let upload = require('../services/upload');
+let photoService = require('../services/photo');
 
 module.exports = (app, db) => {
     let filters = app.get('filters');
@@ -49,7 +49,7 @@ module.exports = (app, db) => {
     router.post('/add', (req, res) => {
         console.log('------------- add new banner --------------');
         console.log(req.body);
-        upload.multiple(req, res).then(
+        photoService.uploadMultiple(req, res).then(
             (files) => {
                 filters.input.validate(bannerForm);
                 let newBanner = new db.Banner(req.body);

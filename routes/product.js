@@ -6,7 +6,7 @@ let ObjectId = mongoose.Types.ObjectId;
 
 
 // services
-let uploadFile = require('../services/upload');
+let photoService = require('../services/photo');
 let translitService = require('../services/translit');
 
 // valudate forms
@@ -155,7 +155,7 @@ module.exports = (app, db) => {
     });
 
     router.put('/edit', (req, res) => {
-        uploadFile(req, res).then(
+        photoService.uploadOne(req, res).then(
             (file) => {
                 console.log(req.body);
                 let name = req.body.name;

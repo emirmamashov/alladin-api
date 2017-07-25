@@ -5,7 +5,7 @@ let router = express.Router();
 let categoryForm = require('../forms/category');
 
 // services
-let uploadFile = require('../services/upload');
+let photoService = require('../services/photo');
 
 module.exports = (app, db) => {
     let filters = app.get('filters');

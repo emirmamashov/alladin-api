@@ -7,7 +7,7 @@ let ObjectId = mongoose.Types.ObjectId;
 let photoForm = require('../forms/photo');
 
 // services
-let uploadFile = require('../services/upload');
+let photoService = require('../services/photo');
 let translitService = require('../services/translit');
 
 module.exports = (app, db) => {
@@ -47,7 +47,7 @@ module.exports = (app, db) => {
     });
 
     router.post('/add', (req, res) => {
-        uploadFile(req, res).then(
+        photoService.uploadOne(req, res).then(
             (file) => {
                 if (!file) {
                     return res.status(200).json({

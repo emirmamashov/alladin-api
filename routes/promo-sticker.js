@@ -1,7 +1,7 @@
 let express = require('express');
 let router = express.Router();
 
-let uploadFile = require('../services/upload');
+let photoService = require('../services/photo');
 
 // validate forms
 let promoStickerForm = require('../forms/promo-sticker');
@@ -46,7 +46,7 @@ module.exports = (app, db) => {
     // add new
     router.post('/add', (req, res) => {
         console.log(req.body);
-        uploadFile(req, res).then(
+        photoService.uploadOne(req, res).then(
             (file) => {
                 console.log(file);
                 // filters.input.validate(promoStickerForm);

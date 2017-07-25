@@ -45,7 +45,10 @@ module.exports = {
     viewInMenu: {
 
     },
-    photo: {
+    image: {
+        
+    },
+    images: {
         
     },
     banner: {

@@ -1,5 +1,7 @@
 let express = require('express');
 let router = express.Router();
+let mongoose = require('mongoose');
+let ObjectId = mongoose.Types.ObjectId;
 
 // validate forms
 let categoryForm = require('../forms/category');
@@ -15,81 +17,18 @@ module.exports = (app, db) => {
     router.get('/', (req, res) => {
         db.Category.find().then(
             (categories) => {
-                let photoIds = [];
-                categories.forEach((category) => {
-                    if (category.photo) {
-                        photoIds.push(category.photo);
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно',
+                    data: {
+                        code: 200,
+                        message: 'Успешно',
+                        data: {
+                            categories: categories
+                        }
                     }
                 });
-
-                let bannerIds = [];
-                categories.forEach((category) => {
-                    if (category.banner) {
-                        bannerIds.push(category.banner);
-                    }
-                });
-
-                db.Banner.find({_id: {$in: bannerIds}}).then(
-                    (banners) => {
-                        banners.forEach((banner) => {
-                            if (banner.photo) {
-                                photoIds.push(banner.photo);
-                            }
-                        });
-                        db.Photo.find({_id: {$in: photoIds}}).then(
-                            (photos) => {
-                                banners.forEach((banner) => {
-                                    let bannerPhotoIdString = banner.photo ? banner.photo.toString() : '';
-                                    banner.photo = photos.filter(x => x._id.toString() === bannerPhotoIdString)[0] || {};
-                                });
-
-                                categories.forEach((category) => {
-                                    let categoryPhotoIdString = category.photo ? category.photo.toString() : '';
-                                    let categoryBannerIdString = category.banner ? category.banner.toString() : '';
-                                    category.photo = photos.filter(x => x._id.toString() === categoryPhotoIdString)[0] || {};
-                                    category.banner = banners.filter(x => x._id.toString() === categoryBannerIdString)[0] || {};
-                                });
-
-                                res.status(200).json({
-                                    success: true,
-                                    status: 'green',
-                                    message: 'Успешно',
-                                    data: {
-                                        code: 200,
-                                        message: 'Успешно',
-                                        data: {
-                                            categories: categories
-                                        }
-                                    }
-                                });
-                            }
-                        ).catch(
-                            (err) => {
-                                res.status(200).json({
-                                    success: false,
-                                    status: 'red',
-                                    message: 'Что то пошло не так',
-                                    data: {
-                                        code: 500,
-                                        message: err
-                                    }
-                                });
-                            }
-                        );
-                    }
-                ).catch(
-                    (err) => {
-                        res.status(200).json({
-                            success: false,
-                            status: 'red',
-                            message: 'Что то пошло не так',
-                            data: {
-                                code: 500,
-                                message: err
-                            }
-                        });
-                    }
-                );
             }
         ).catch(
             (err) => {
@@ -107,72 +46,43 @@ module.exports = (app, db) => {
     });
 
     // add new category
-    router.post('/add', filters.input.validate(categoryForm), (req, res) => {
+    router.post('/add', (req, res) => {
         console.log('------------- add new category --------------');
         console.log(req.body);
-        let newCategory = new db.Category(req.body);
-        newCategory.parentCategory = newCategory.parentCategory || null;
-        newCategory.save().then(
-            (category) => {
-
-                let photoIds = [];
-                if (category.photo) {
-                    photoIds.push(category.photo);
-                }
-
-                let bannerId = '';
-                if (category.banner) {
-                    bannerId = category.banner;
-                }
-
-                db.Banner.findById(bannerId).then(
-                    (banner) => {
-                        if (banner.photo) {
-                            photoIds.push(banner.photo);
+        photoService.uploadMultiple(req, res).then(
+            (files) => {
+                filters.input.validate(categoryForm);
+                let newCategory = new db.Category(req.body);
+                if (files && files.length > 0) {
+                    let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
+                    newCategory.image = urlPhoto;
+                    files.forEach((file) => {
+                        if (file) {
+                            newCategory.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
                         }
-                        db.Photo.find({_id: {$in: photoIds}}).then(
-                            (photos) => {
-                                let bannerPhotoIdString = banner.photo ? banner.photo.toString() : '';
-                                banner.photo = photos.filter(x => x._id.toString() === bannerPhotoIdString)[0] || {};
-
-                                let categoryPhotoIdString = category.photo ? category.photo.toString() : '';
-                                let categoryBannerIdString = category.banner ? category.banner.toString() : '';
-                                category.photo = photos.filter(x => x._id.toString() === categoryPhotoIdString)[0] || {};
-                                category.banner = banner;
-
-                                res.status(200).json({
-                                    success: true,
-                                    status: 'green',
-                                    message: 'Успешно',
-                                    data: {
-                                        code: 200,
-                                        message: 'Успешно',
-                                        data: {
-                                            category: category
-                                        }
-                                    }
-                                });
+                    });
+                }
+                newCategory.parentCategory = newCategory.parentCategory || null;
+                newCategory.save().then(
+                    (category) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно',
+                            data: {
+                                code: 200,
+                                message: 'Успешно',
+                                data: {
+                                    category: category
+                                }
                             }
-                        ).catch(
-                            (err) => {
-                                res.status(200).json({
-                                    success: false,
-                                    status: 'red',
-                                    message: 'Что то пошло не так',
-                                    data: {
-                                        code: 500,
-                                        message: err
-                                    }
-                                });
-                            }
-                        );
-                    }
-                ).catch(
+                        });
+                }).catch(
                     (err) => {
                         res.status(200).json({
                             success: false,
-                            status: 'red',
                             message: 'Что то пошло не так',
+                            status: 'red',
                             data: {
                                 code: 500,
                                 message: err
@@ -180,19 +90,41 @@ module.exports = (app, db) => {
                         });
                     }
                 );
-            }).catch(
-                (err) => {
-                    res.status(200).json({
-                        success: false,
-                        message: 'Что то пошло не так',
-                        status: 'red',
-                        data: {
-                            code: 500,
-                            message: err
-                        }
-                    });
-                }
-            );
+            }
+        ).catch(
+            (err) => {
+                cosnole.log(err);
+                let newCategory = new db.Category(req.body);
+                newCategory.parentCategory = newCategory.parentCategory || null;
+                newCategory.save().then(
+                    (category) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно',
+                            data: {
+                                code: 200,
+                                message: 'Успешно',
+                                data: {
+                                    category: category
+                                }
+                            }
+                        });
+                }).catch(
+                    (err) => {
+                        res.status(200).json({
+                            success: false,
+                            message: 'Что то пошло не так',
+                            status: 'red',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
+            }
+        );
     });
 
     // add categories
@@ -244,6 +176,18 @@ module.exports = (app, db) => {
     // update category data
     router.put('/update/:id', filters.input.validate(categoryForm), (req, res) => {
         let _id = req.params.id;
+        if (!_id || !ObjectId.isValid(_id)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметер неправильно передано',
+                data: {
+                    code: 403,
+                    message: 'Parameters not valid'
+                }
+            });
+        }
+
         db.Category.findById(_id).then(
             (category) => {
                 if (!category) {

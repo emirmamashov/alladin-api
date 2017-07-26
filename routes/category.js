@@ -204,17 +204,19 @@ module.exports = (app, db) => {
                                 }
                             });
                         }
+                        
                         let updateImagesArr = req.body.imagesString.split(',');
+                        let removeImagesPromise = [];
                         if (updateImagesArr && category.images && category.images.length > 0) {
                             category.images.forEach((url) => {
                                 let imageFind = updateImagesArr.filter(x => x === url);
                                 if (imageFind.length === 0) {
-                                    photoService.remove(url); // delete image
+                                    removeImagesPromise.push(photoService.remove(url)); // delete image
                                     category.images = category.images.filter(x => x !== url);
                                 }
                             });
                         }
-
+                        
                         if (files && files.length > 0) {
                             let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
                             category.image = urlPhoto;
@@ -234,20 +236,25 @@ module.exports = (app, db) => {
 
                         category.save().then(
                             (updatedCategory) => {
-                                    res.status(200).json({
-                                        success: true,
-                                        status: 'green',
-                                        message: 'Данные категории успешно обнавлены',
-                                        data: {
-                                            code: 200,
-                                            message: 'Updated successful',
-                                            data: {
-                                                category: updatedCategory
-                                            }
-                                        }
+                                Promise.all(removeImagesPromise).then(
+                                    (response) => {
+                                        console.log(response);
+                                    }).catch((err) => {
+                                        console.log(err);
                                     });
-                                }
-                            ).catch(
+                                res.status(200).json({
+                                    success: true,
+                                    status: 'green',
+                                    message: 'Данные категории успешно обнавлены',
+                                    data: {
+                                        code: 200,
+                                        message: 'Updated successful',
+                                        data: {
+                                            category: updatedCategory
+                                        }
+                                    }
+                                });
+                            }).catch(
                                 (err) => {
                                     console.log(err);
                                     res.status(200).json({
@@ -261,21 +268,20 @@ module.exports = (app, db) => {
                                     });
                                 }
                             );
-                        }
-                    ).catch(
-                        (err) => {
-                            console.log(err);
-                            res.status(200).json({
-                                success: false,
-                                status: 'red',
-                                message: 'Что то пошло не так',
-                                data: {
-                                    code: 500,
-                                    message: err
-                                }
-                            });
-                        }
-                    );
+                        }).catch(
+                            (err) => {
+                                console.log(err);
+                                res.status(200).json({
+                                    success: false,
+                                    status: 'red',
+                                    message: 'Что то пошло не так',
+                                    data: {
+                                        code: 500,
+                                        message: err
+                                    }
+                                });
+                            }
+                        );
             }
         ).catch(
             (err) => {
@@ -295,11 +301,12 @@ module.exports = (app, db) => {
                         }
 
                         let updateImagesArr = req.body.imagesString.split(',');
+                        let removeImagesPromise = [];
                         if (updateImagesArr && category.images && category.images.length > 0) {
                             category.images.forEach((url) => {
                                 let imageFind = updateImagesArr.filter(x => x === url);
                                 if (imageFind.length === 0) {
-                                    photoService.remove(url); // delete image
+                                    removeImagesPromise.push(photoService.remove(url)); // delete image
                                     category.images = category.images.filter(x => x !== url);
                                 }
                             });
@@ -314,6 +321,12 @@ module.exports = (app, db) => {
 
                         category.save().then(
                             (updatedCategory) => {
+                                Promise.all(removeImagesPromise).then(
+                                    (response) => {
+                                        console.log(response);
+                                    }).catch((err) => {
+                                        console.log(err);
+                                    });
                                 res.status(200).json({
                                     success: true,
                                     status: 'green',
@@ -388,12 +401,19 @@ module.exports = (app, db) => {
                         }
                     });
                 }
-
+                let photoRemovePromise = [];
                 if (category.images && category.images.length > 0) {
                     category.images.forEach((url) => {
-                        photoService.remove(url);
+                        photoRemovePromise.push(photoService.remove(url));
                     });
                 }
+
+                Promise.all(photoRemovePromise).then(
+                    (response) => {
+                        console.log(response);
+                    }).catch((err) => {
+                        console.log(err);
+                    });
 
                 res.status(200).json({
                     success: true,

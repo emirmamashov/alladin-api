@@ -36,8 +36,18 @@ module.exports = {
     },
 
     remove(url) {
-        if (url) {
-            fs.unlink(config.STATIC_DIR + url);
-        }
+        return new Promise((resolve, reject) => {
+            if (url) {
+                fs.unlink(config.STATIC_DIR + url, (err) => {
+                    if (err) {
+                        reject(err);
+                    }
+
+                    resolve('ok');
+                });
+            } else {
+                reject('url is not defined');
+            }
+        });
     }
 }

@@ -174,7 +174,7 @@ module.exports = (app, db) => {
     });
 
     // update category data
-    router.put('/update/:id', filters.input.validate(categoryForm), (req, res) => {
+    router.put('/update/:id', (req, res) => {
         let _id = req.params.id;
         if (!_id || !ObjectId.isValid(_id)) {
             return res.status(200).json({
@@ -188,43 +188,159 @@ module.exports = (app, db) => {
             });
         }
 
-        db.Category.findById(_id).then(
-            (category) => {
-                if (!category) {
-                    return res.status(200).json({
-                        success: false,
-                        message: 'Категория не найдено',
-                        status: 'yellow',
-                        data: {
-                            code: 404,
-                            message: 'category not found'
-                        }
-                    });
-                }
-
-                category.name = req.body.name ? req.body.name : category.name;
-                category.parentCategory = req.body.parentCategory ? req.body.parentCategory : category.parentCategory;
-                category.description = req.body.description ? req.body.description : category.description;
-                category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
-                category.author = req.body.author ? req.body.author : category.author;
-                if (category.photo || req.body.photo) category.photo = req.body.photo ? req.body.photo : category.photo;
-                if (category.banner || req.body.banner)category.banner = req.body.banner ? req.body.banner : category.banner;
-                category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
-
-                category.save().then(
-                    (updatedCategory) => {
-                        res.status(200).json({
-                            success: true,
-                            status: 'green',
-                            message: 'Данные категории успешно обнавлены',
-                            data: {
-                                code: 200,
-                                message: 'Updated successful',
+        photoService.uploadMultiple(req, res).then(
+            (files) => {
+                filters.input.validate(categoryForm);
+                db.Category.findById(_id).then(
+                    (category) => {
+                        if (!category) {
+                            return res.status(200).json({
+                                success: false,
+                                message: 'Категория не найдено',
+                                status: 'yellow',
                                 data: {
-                                    category: updatedCategory
+                                    code: 404,
+                                    message: 'category not found'
                                 }
+                            });
+                        }
+                        let updateImagesArr = req.body.imagesString.split(',');
+                        if (updateImagesArr && category.images && category.images.length > 0) {
+                            category.images.forEach((url) => {
+                                let imageFind = updateImagesArr.filter(x => x === url);
+                                if (imageFind.length === 0) {
+                                    photoService.remove(url); // delete image
+                                    category.images = category.images.filter(x => x !== url);
+                                }
+                            });
+                        }
+
+                        if (files && files.length > 0) {
+                            let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
+                            category.image = urlPhoto;
+                            files.forEach((file) => {
+                                if (file) {
+                                    category.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
+                                }
+                            });
+                        }
+
+                        category.name = req.body.name ? req.body.name : category.name;
+                        category.parentCategory = req.body.parentCategory ? req.body.parentCategory : category.parentCategory;
+                        category.description = req.body.description ? req.body.description : category.description;
+                        category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
+                        category.author = req.body.author ? req.body.author : category.author;
+                        category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
+
+                        category.save().then(
+                            (updatedCategory) => {
+                                    res.status(200).json({
+                                        success: true,
+                                        status: 'green',
+                                        message: 'Данные категории успешно обнавлены',
+                                        data: {
+                                            code: 200,
+                                            message: 'Updated successful',
+                                            data: {
+                                                category: updatedCategory
+                                            }
+                                        }
+                                    });
+                                }
+                            ).catch(
+                                (err) => {
+                                    console.log(err);
+                                    res.status(200).json({
+                                        success: false,
+                                        status: 'red',
+                                        message: 'что то пошло не так',
+                                        data: {
+                                            code: 500,
+                                            message: err
+                                        }
+                                    });
+                                }
+                            );
+                        }
+                    ).catch(
+                        (err) => {
+                            console.log(err);
+                            res.status(200).json({
+                                success: false,
+                                status: 'red',
+                                message: 'Что то пошло не так',
+                                data: {
+                                    code: 500,
+                                    message: err
+                                }
+                            });
+                        }
+                    );
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                db.Category.findById(_id).then(
+                    (category) => {
+                        if (!category) {
+                            return res.status(200).json({
+                                success: false,
+                                message: 'Категория не найдено',
+                                status: 'yellow',
+                                data: {
+                                    code: 404,
+                                    message: 'category not found'
+                                }
+                            });
+                        }
+
+                        let updateImagesArr = req.body.imagesString.split(',');
+                        if (updateImagesArr && category.images && category.images.length > 0) {
+                            category.images.forEach((url) => {
+                                let imageFind = updateImagesArr.filter(x => x === url);
+                                if (imageFind.length === 0) {
+                                    photoService.remove(url); // delete image
+                                    category.images = category.images.filter(x => x !== url);
+                                }
+                            });
+                        }
+
+                        category.name = req.body.name ? req.body.name : category.name;
+                        category.parentCategory = req.body.parentCategory ? req.body.parentCategory : category.parentCategory;
+                        category.description = req.body.description ? req.body.description : category.description;
+                        category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
+                        category.author = req.body.author ? req.body.author : category.author;
+                        category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
+
+                        category.save().then(
+                            (updatedCategory) => {
+                                res.status(200).json({
+                                    success: true,
+                                    status: 'green',
+                                    message: 'Данные категории успешно обнавлены',
+                                    data: {
+                                        code: 200,
+                                        message: 'Updated successful',
+                                        data: {
+                                            category: updatedCategory
+                                        }
+                                    }
+                                });
                             }
-                        });
+                        ).catch(
+                            (err) => {
+                                console.log(err);
+                                res.status(200).json({
+                                    success: false,
+                                    status: 'red',
+                                    message: 'что то пошло не так',
+                                    data: {
+                                        code: 500,
+                                        message: err
+                                    }
+                                });
+                            }
+                        );
                     }
                 ).catch(
                     (err) => {
@@ -232,7 +348,7 @@ module.exports = (app, db) => {
                         res.status(200).json({
                             success: false,
                             status: 'red',
-                            message: 'что то пошло не так',
+                            message: 'Что то пошло не так',
                             data: {
                                 code: 500,
                                 message: err
@@ -241,20 +357,8 @@ module.exports = (app, db) => {
                     }
                 );
             }
-        ).catch(
-            (err) => {
-                console.log(err);
-                res.status(200).json({
-                    success: false,
-                    status: 'red',
-                    message: 'Что то пошло не так',
-                    data: {
-                        code: 500,
-                        message: err
-                    }
-                });
-            }
         );
+        
     });
 
     router.delete('/remove/:id', (req, res) => {

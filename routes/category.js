@@ -62,7 +62,7 @@ module.exports = (app, db) => {
                         }
                     });
                 }
-                newCategory.parentCategory = newCategory.parentCategory || null;
+                newCategory.parentCategory = ObjectId.isValid(newCategory.parentCategory) || null;
                 newCategory.save().then(
                     (category) => {
                         res.status(200).json({
@@ -95,7 +95,7 @@ module.exports = (app, db) => {
             (err) => {
                 cosnole.log(err);
                 let newCategory = new db.Category(req.body);
-                newCategory.parentCategory = newCategory.parentCategory || null;
+                newCategory.parentCategory = ObjectId.isValid(newCategory.parentCategory) || null;
                 newCategory.save().then(
                     (category) => {
                         res.status(200).json({
@@ -228,7 +228,7 @@ module.exports = (app, db) => {
                         }
 
                         category.name = req.body.name ? req.body.name : category.name;
-                        category.parentCategory = req.body.parentCategory ? req.body.parentCategory : category.parentCategory;
+                        category.parentCategory = ObjectId.isValid(req.body.parentCategory) ? req.body.parentCategory : category.parentCategory;
                         category.description = req.body.description ? req.body.description : category.description;
                         category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
                         category.author = req.body.author ? req.body.author : category.author;
@@ -313,7 +313,7 @@ module.exports = (app, db) => {
                         }
 
                         category.name = req.body.name ? req.body.name : category.name;
-                        category.parentCategory = req.body.parentCategory ? req.body.parentCategory : category.parentCategory;
+                        category.parentCategory = ObjectId.isValid(req.body.parentCategory) ? req.body.parentCategory : category.parentCategory;
                         category.description = req.body.description ? req.body.description : category.description;
                         category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
                         category.author = req.body.author ? req.body.author : category.author;

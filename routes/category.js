@@ -62,7 +62,7 @@ module.exports = (app, db) => {
                         }
                     });
                 }
-                newCategory.parentCategory = ObjectId.isValid(newCategory.parentCategory) || null;
+                newCategory.parentCategory = ObjectId.isValid(newCategory.parentCategory) ? newCategory.parentCategory : null;
                 newCategory.save().then(
                     (category) => {
                         res.status(200).json({
@@ -95,7 +95,7 @@ module.exports = (app, db) => {
             (err) => {
                 cosnole.log(err);
                 let newCategory = new db.Category(req.body);
-                newCategory.parentCategory = ObjectId.isValid(newCategory.parentCategory) || null;
+                newCategory.parentCategory = ObjectId.isValid(newCategory.parentCategory) ? newCategory.parentCategory : null;
                 newCategory.save().then(
                     (category) => {
                         res.status(200).json({

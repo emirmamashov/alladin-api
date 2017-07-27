@@ -103,7 +103,6 @@ module.exports = (app, db) => {
         );
     });
 
-
     // update category data
     router.put('/update/:id', (req, res) => {
         let _id = req.params.id;
@@ -298,6 +297,76 @@ module.exports = (app, db) => {
             }
         );
         
+    });
+
+    router.delete('/remove/:id', (req, res) => {
+        let _id = req.params.id;
+        if(!_id || !ObjectId.isValid(_id)) {
+            res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметры неправильного формата',
+                data: {
+                    code: 403,
+                    message: 'Parameter not valid'
+                }
+            });
+        }
+
+        db.Producer.findByIdAndRemove(_id).then(
+            (producer) => {
+                if(!producer) {
+                    res.status(200).json({
+                        success: false,
+                        status: 'yellow',
+                        message: 'Не найдено',
+                        data: {
+                            code: 404,
+                            message: 'not found'
+                        }
+                    });
+                }
+                let photoRemovePromise = [];
+                if (producer.images && producer.images.length > 0) {
+                    producer.images.forEach((url) => {
+                        photoRemovePromise.push(photoService.remove(url));
+                    });
+                }
+
+                Promise.all(photoRemovePromise).then(
+                    (response) => {
+                        console.log(response);
+                    }).catch((err) => {
+                        console.log(err);
+                    });
+
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно удалено',
+                    data: {
+                        code: 200,
+                        message: 'Success delete producer',
+                        data: {
+                            producer: producer
+                        }
+                    }
+                });
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
     });
 
     app.use('/producers', router);

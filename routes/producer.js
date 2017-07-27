@@ -4,8 +4,12 @@ let router = express.Router();
 // validate forms
 let producerForm = require('../forms/producer');
 
+// services
+let photoService = require('../services/photo');
+
 module.exports = (app, db) => {
     let filters = app.get('filters');
+    let config = app.get('config');
 
     // get all
     router.get('/', (req, res) => {
@@ -40,30 +44,50 @@ module.exports = (app, db) => {
     });
 
     // add new
-    router.post('/add', filters.input.validate(producerForm), (req, res) => {
-        let newproducer = new db.Producer();
-        newproducer.name = req.body.name;
-        newproducer.description = req.body.description;
-        newproducer.keywords = req.body.keywords;
-        newproducer.author = req.body.author;
-
-        newproducer.save().then(
-            (producer) => {
-                res.status(200).json({
-                    success: true,
-                    status: 'green',
-                    message: 'Сохранено',
-                    data: {
-                        code: 201,
-                        message: 'Create',
-                        data: {
-                            producer: producer
+    router.post('/add', (req, res) => {
+        console.log('------------- add new producer --------------');
+        photoService.uploadMultiple(req, res).then(
+            (files) => {
+                let newproducer = new db.Producer(req.body);
+                if (files && files.length > 0) {
+                    let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
+                    newproducer.image = urlPhoto;
+                    files.forEach((file) => {
+                        if (file) {
+                            newproducer.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
                         }
-                    }
-                });
-            }
-        ).catch(
+                    });
+                }
+                newproducer.save().then(
+                    (producer) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Сохранено',
+                            data: {
+                                code: 201,
+                                message: 'Create',
+                                data: {
+                                    producer: producer
+                                }
+                            }
+                        });
+                    }).catch(
+                        (err) => {
+                            res.status(200).json({
+                                success: false,
+                                status: 'red',
+                                message: 'Что то пошло не так',
+                                data: {
+                                    code: 500,
+                                    message: err
+                                }
+                            });
+                        }
+                    );
+        }).catch(
             (err) => {
+                console.log(err);
                 res.status(200).json({
                     success: false,
                     status: 'red',

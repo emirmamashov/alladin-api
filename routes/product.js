@@ -179,15 +179,18 @@ module.exports = (app, db) => {
             (files) => {
                 console.log(req.body);
                 let name = req.body.name;
-                if (!name) return res.status(200).json({
-                    success: false,
-                    status: 'yellow',
-                    message: 'Введите наименование товара',
-                    data: {
-                        code: 403,
-                        message: 'name is null'
-                    }
-                });
+                if (!name) {
+                    return res.status(200).json({
+                        success: false,
+                        status: 'yellow',
+                        message: 'Введите наименование товара',
+                        data: {
+                            code: 403,
+                            message: 'name is null'
+                        }
+                    });
+                }
+
                 const _id = req.body._id;
                 if(!ObjectId.isValid(req.body._id)) {
                     return res.status(200).json({
@@ -440,6 +443,78 @@ module.exports = (app, db) => {
             );
         });
     });
+
+    router.delete('/remove/:id', (req, res) => {
+        let _id = req.params.id;
+        console.log(_id);
+        if(!_id || !ObjectId.isValid(_id)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметры неправильного формата',
+                data: {
+                    code: 403,
+                    message: 'Parameter not valid'
+                }
+            });
+        }
+
+        db.Product.findByIdAndRemove(_id).then(
+            (product) => {
+                if(!product) {
+                    return res.status(200).json({
+                        success: false,
+                        status: 'yellow',
+                        message: 'Не найдено',
+                        data: {
+                            code: 404,
+                            message: 'not found'
+                        }
+                    });
+                }
+                let photoRemovePromise = [];
+                if (product.images && product.images.length > 0) {
+                    product.images.forEach((url) => {
+                        photoRemovePromise.push(photoService.remove(url));
+                    });
+                }
+
+                Promise.all(photoRemovePromise).then(
+                    (response) => {
+                        console.log(response);
+                    }).catch((err) => {
+                        console.log(err);
+                    });
+
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно удалено',
+                    data: {
+                        code: 200,
+                        message: 'Success delete product',
+                        data: {
+                            product: product
+                        }
+                    }
+                });
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
+    });
+
 
     app.use('/products', router);
 }

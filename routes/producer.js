@@ -302,7 +302,7 @@ module.exports = (app, db) => {
     router.delete('/remove/:id', (req, res) => {
         let _id = req.params.id;
         if(!_id || !ObjectId.isValid(_id)) {
-            res.status(200).json({
+            return res.status(200).json({
                 success: false,
                 status: 'yellow',
                 message: 'Параметры неправильного формата',
@@ -316,7 +316,7 @@ module.exports = (app, db) => {
         db.Producer.findByIdAndRemove(_id).then(
             (producer) => {
                 if(!producer) {
-                    res.status(200).json({
+                    return res.json({
                         success: false,
                         status: 'yellow',
                         message: 'Не найдено',

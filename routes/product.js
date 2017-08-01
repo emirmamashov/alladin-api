@@ -99,48 +99,68 @@ module.exports = (app, db) => {
     });
 
     // add new product
-    router.post('/add', filters.input.validate(productForm), (req, res) => {
-        let name = req.body.name;
-
-        console.log(req.body);
-        let newProduct = new db.Product({
-            name: name,
-            htmlH1: req.body.htmlH1 || '',
-            htmlTitle: req.body.htmlTitle || '',
-            metaDescription: req.body.metaDescription || '',
-            metaKeywords: req.body.metaKeywords || '',
-            description: req.body.description || '',
-            tegs: req.body.tegs || '',
-            phone: req.body.phone || null,
-            price: req.body.price || null,
-            priceStock: req.body.priceStock || null,
-            seoUrl: req.body.seoUrl ? req.body.seoUrl : '',
-            promoStickers: req.body.promoStickers || [],
-            photos: req.body.photos,
-            producerId: req.body.producerId || null,
-            categoryId: req.body.categoryId || null,
-            categories: req.body.categories || []
-        });
-
-        console.log(newProduct);
-
-        newProduct.save().then(
-            () => {
-                res.status(200).json({
-                    success: true,
-                    status: 'green',
-                    message: 'Успешно',
-                    data: {
-                        code: 200,
-                        message: 'Успешно',
-                        data: {
-                            product: newProduct
+    router.post('/add', (req, res) => {
+        photoService.uploadMultiple(req, res).then(
+            (files) => {
+                console.log(req.body);
+                filters.input.validate(productForm);
+                let newProduct = new db.Product(req.body);
+                if (files && files.length > 0) {
+                    let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
+                    newProduct.image = urlPhoto;
+                    newProduct.images = newProduct.images || [];
+                    files.forEach((file) => {
+                        if (file) {
+                            newProduct.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
                         }
+                    });
+                }
+
+                newProduct.promoStickerId = ObjectId.isValid(newProduct.promoStickerId) ? newProduct.promoStickerId : null;
+                newProduct.producerId = ObjectId.isValid(newProduct.producerId) ? newProduct.producerId : null;
+                newProduct.categoryId = ObjectId.isValid(newProduct.categoryId) ? newProduct.categoryId : null;
+                if (newProduct.categories && newProduct.categories.length > 0) {
+                    newProduct.categories.forEach((categoryId) => {
+                        if (ObjectId.isValid(categoryId)) {
+                            newProduct.categories.push(categoryId);
+                        }
+                    });
+                }
+
+                console.log(newProduct);
+                newProduct.save().then(
+                    (product) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно',
+                            data: {
+                                code: 200,
+                                message: 'Успешно',
+                                data: {
+                                    product: product
+                                }
+                            }
+                        });
                     }
-                });
+                ).catch(
+                    (err) => {
+                        console.log(err);
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
             }
         ).catch(
             (err) => {
+                console.log(err);
                 res.status(200).json({
                     success: false,
                     status: 'red',
@@ -154,9 +174,9 @@ module.exports = (app, db) => {
         );
     });
 
-    router.put('/edit', (req, res) => {
-        photoService.uploadOne(req, res).then(
-            (file) => {
+    router.put('/update', (req, res) => {
+        photoService.uploadMultiple(req, res).then(
+            (files) => {
                 console.log(req.body);
                 let name = req.body.name;
                 if (!name) return res.status(200).json({
@@ -168,8 +188,20 @@ module.exports = (app, db) => {
                         message: 'name is null'
                     }
                 });
-                req.body.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
-                db.Product.findById(req.body._id).then(
+                const _id = req.body._id;
+                if(!ObjectId.isValid(req.body._id)) {
+                    return res.status(200).json({
+                        success: false,
+                        status: 'yellow',
+                        message: 'Параметры переданы неправильном формате',
+                        data: {
+                            code: 403,
+                            message: 'parameter not valid data'
+                        }
+                    });
+                }
+
+                db.Product.findById(_id).then(
                     (product) => {
                         console.log(product);
                         if (!product) {
@@ -184,6 +216,28 @@ module.exports = (app, db) => {
                             });
                         }
 
+                        let updateImagesArr = req.body.images || [];
+                        let removeImagesPromise = [];
+                        if (updateImagesArr && product.images && product.images.length > 0) {
+                            product.images.forEach((url) => {
+                                let imageFind = updateImagesArr.filter(x => x === url);
+                                if (imageFind.length === 0) {
+                                    removeImagesPromise.push(photoService.remove(url)); // delete image
+                                    product.images = product.images.filter(x => x !== url);
+                                }
+                            });
+                        }
+                        
+                        if (files && files.length > 0) {
+                            let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
+                            product.image = urlPhoto;
+                            files.forEach((file) => {
+                                if (file) {
+                                    product.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
+                                }
+                            });
+                        }
+
                         product.name = req.body.name;
                         product.htmlH1 = req.body.htmlH1;
                         product.htmlTitle = req.body.htmlTitle;
@@ -194,15 +248,27 @@ module.exports = (app, db) => {
                         product.phone = req.body.phone;
                         product.price = req.body.price;
                         product.priceStock = req.body.priceStock;
-                        product.seoUrl = req.body.seoUrl;
-                        product.promoStickers = req.body.promoStickers;
-                        product.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
-                        product.producerId = req.body.producerId;
-                        product.categoryId = req.body.categoryId;
-                        product.categories = req.body.categories;
+                        product.seoUrl = req.body.seoUrl;            
+
+                        product.promoStickerId = ObjectId.isValid(product.promoStickerId) ? product.promoStickerId : null;
+                        product.producerId = ObjectId.isValid(product.producerId) ? product.producerId : null;
+                        product.categoryId = ObjectId.isValid(product.categoryId) ? product.categoryId : null;
+                        if (product.categories && product.categories.length > 0) {
+                            product.categories.forEach((categoryId) => {
+                                if (ObjectId.isValid(categoryId)) {
+                                    product.categories.push(categoryId);
+                                }
+                            });
+                        }
 
                         product.save().then(
                             () => {
+                                Promise.all(removeImagesPromise).then(
+                                    (response) => {
+                                        console.log(response);
+                                    }).catch((err) => {
+                                        console.log(err);
+                                    });
                                 res.status(200).json({
                                     success: true,
                                     status: 'green',
@@ -233,6 +299,7 @@ module.exports = (app, db) => {
                     }
                 ).catch(
                     (err) => {
+                        console.log(err);
                         res.status(200).json({
                             success: false,
                             message: 'Что то пошло не так',
@@ -248,93 +315,15 @@ module.exports = (app, db) => {
         ).catch(
             (err) => {
                 console.log(err);
-                console.log(req.body);
-                let name = req.body.name;
-                if (!name) return res.status(200).json({
+                res.status(200).json({
                     success: false,
-                    status: 'yellow',
-                    message: 'Введите наименование товара',
+                    message: 'Что то пошло не так',
+                    status: 'red',
                     data: {
-                        code: 403,
-                        message: 'name is null'
+                        code: 500,
+                        message: err
                     }
                 });
-                req.body.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
-                db.Product.findById(req.body._id).then(
-                    (product) => {
-                        console.log(product);
-                        if (!product) {
-                            return res.status(200).json({
-                                success: false,
-                                status: 'yellow',
-                                message: 'Товар не найдено',
-                                data: {
-                                    code: 404,
-                                    message: 'product not found'
-                                }
-                            });
-                        }
-
-                        product.name = req.body.name;
-                        product.htmlH1 = req.body.htmlH1;
-                        product.htmlTitle = req.body.htmlTitle;
-                        product.metaDescription = req.body.metaDescription;
-                        product.metaKeywords = req.body.metaKeywords;
-                        product.description = req.body.description;
-                        product.tegs = req.body.tegs;
-                        product.phone = req.body.phone;
-                        product.price = req.body.price;
-                        product.priceStock = req.body.priceStock;
-                        product.seoUrl = req.body.seoUrl;
-                        product.promoStickers = req.body.promoStickers;
-                        product.image = file ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
-                        product.producerId = req.body.producerId;
-                        product.categoryId = req.body.categoryId;
-                        product.categories = req.body.categories;
-
-                        product.save().then(
-                            () => {
-                                res.status(200).json({
-                                    success: true,
-                                    status: 'green',
-                                    message: 'Сохранено',
-                                    data: {
-                                        code: 200,
-                                        message: 'Update success!',
-                                        data: {
-                                            product: product
-                                        }
-                                    }
-                                });
-                            }
-                        ).catch(
-                            (err) => {
-                                console.log(err);
-                                res.status(200).json({
-                                    success: false,
-                                    status: 'red',
-                                    message: 'Что то пошло не так',
-                                    data: {
-                                        code: 500,
-                                        message: err
-                                    }
-                                });
-                            }
-                        );
-                    }
-                ).catch(
-                    (err) => {
-                        res.status(200).json({
-                            success: false,
-                            message: 'Что то пошло не так',
-                            status: 'red',
-                            data: {
-                                code: 500,
-                                message: err
-                            }
-                        });
-                    }
-                );
             }
         );
     });

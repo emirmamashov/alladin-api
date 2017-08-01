@@ -205,7 +205,7 @@ module.exports = (app, db) => {
                             });
                         }
                         
-                        let updateImagesArr = req.body.imagesString.split(',');
+                        let updateImagesArr = req.body.images;
                         let removeImagesPromise = [];
                         if (updateImagesArr && category.images && category.images.length > 0) {
                             category.images.forEach((url) => {
@@ -300,7 +300,7 @@ module.exports = (app, db) => {
                             });
                         }
 
-                        let updateImagesArr = req.body.imagesString.split(',');
+                        let updateImagesArr = req.body.images;
                         let removeImagesPromise = [];
                         if (updateImagesArr && category.images && category.images.length > 0) {
                             category.images.forEach((url) => {

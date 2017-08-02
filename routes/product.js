@@ -251,7 +251,8 @@ module.exports = (app, db) => {
                         product.phone = req.body.phone;
                         product.price = req.body.price;
                         product.priceStock = req.body.priceStock;
-                        product.seoUrl = req.body.seoUrl;            
+                        product.seoUrl = req.body.seoUrl;      
+                        product.isHot = req.body.isHot || false;            
 
                         product.promoStickerId = ObjectId.isValid(product.promoStickerId) ? product.promoStickerId : null;
                         product.producerId = ObjectId.isValid(product.producerId) ? product.producerId : null;

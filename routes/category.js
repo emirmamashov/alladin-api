@@ -133,13 +133,7 @@ module.exports = (app, db) => {
         let categoriesSavePromise = [];
 
         newCategories.map((category) => {
-            let newCategory = new db.Category();
-            newCategory.name = req.body.name;
-            newCategory.parentCategory = req.body.parentCategory;
-            newCategory.description = req.body.description;
-            newCategory.keywords = req.body.keywords;
-            newCategory.author = req.body.author;
-
+            let newCategory = new db.Category(req.body);
             categoriesSavePromise.push(newCategory);
         });
 
@@ -233,6 +227,7 @@ module.exports = (app, db) => {
                         category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
                         category.author = req.body.author ? req.body.author : category.author;
                         category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
+                        category.viewInLikeBlock = req.body.viewInLikeBlock ? req.body.viewInLikeBlock : category.viewInLikeBlock;
 
                         category.save().then(
                             (updatedCategory) => {
@@ -318,6 +313,7 @@ module.exports = (app, db) => {
                         category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
                         category.author = req.body.author ? req.body.author : category.author;
                         category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
+                        category.viewInMenu = req.body.viewInLikeBlock ? req.body.viewInLikeBlock : category.viewInLikeBlock;
 
                         category.save().then(
                             (updatedCategory) => {

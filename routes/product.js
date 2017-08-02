@@ -254,9 +254,9 @@ module.exports = (app, db) => {
                         product.seoUrl = req.body.seoUrl;      
                         product.isHot = req.body.isHot || false;            
 
-                        product.promoStickerId = ObjectId.isValid(product.promoStickerId) ? product.promoStickerId : null;
-                        product.producerId = ObjectId.isValid(product.producerId) ? product.producerId : null;
-                        product.categoryId = ObjectId.isValid(product.categoryId) ? product.categoryId : null;
+                        product.promoStickerId = ObjectId.isValid(req.body.promoStickerId) ? req.body.promoStickerId : null;
+                        product.producerId = ObjectId.isValid(req.body.producerId) ? req.body.producerId : null;
+                        product.categoryId = ObjectId.isValid(req.body.categoryId) ? req.body.categoryId : null;
                         if (product.categories && product.categories.length > 0) {
                             product.categories.forEach((categoryId) => {
                                 if (ObjectId.isValid(categoryId)) {

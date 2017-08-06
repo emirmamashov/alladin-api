@@ -1,5 +1,7 @@
 let express = require('express');
 let router = express.Router();
+let mongoose = require('mongoose');
+let ObjectId = mongoose.Types.ObjectId;
 
 let photoService = require('../services/photo');
 
@@ -122,6 +124,109 @@ module.exports = (app, db) => {
                 );
             }
         );
+    });
+
+        // update promosticker data
+    router.put('/update/:id', (req, res) => {
+        let _id = req.params.id;
+        if (!_id || !ObjectId.isValid(_id)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметер неправильно передано',
+                data: {
+                    code: 403,
+                    message: 'Parameters not valid'
+                }
+            });
+        }
+
+        photoService.uploadOne(req, res).then(
+            (file) => {
+                db.PromoSticker.findById(_id).then(
+                    (promoSticker) => {
+                        if (!promoSticker) {
+                            return res.status(200).json({
+                                success: false,
+                                message: 'Промо стикер не найдено',
+                                status: 'yellow',
+                                data: {
+                                    code: 404,
+                                    message: 'promoSticker not found'
+                                }
+                            });
+                        }
+                        
+                        let updateImage = req.body.image;
+                        let removeImagesPromise = [];
+                        if (updateImage && promoSticker.image) {
+                            if (updateImage !== promoSticker.image) {
+                                photoService.remove(promoSticker.image); // delete image
+                                promoSticker.image = updateImage;
+                                promoSticker.image = file.path ? '/uploads' + file.path.replace(config.UPLOAD_DIR, '') : '';
+                            }
+                        } 
+
+                        promoSticker.name = req.body.name ? req.body.name : promoSticker.name;
+
+                        promoSticker.save().then(
+                            (updatedPromoSticker) => {
+                                res.status(200).json({
+                                    success: true,
+                                    status: 'green',
+                                    message: 'Данные промо стикера успешно обнавлены',
+                                    data: {
+                                        code: 200,
+                                        message: 'Updated successful',
+                                        data: {
+                                            promoSticker: updatedPromoSticker
+                                        }
+                                    }
+                                });
+                            }).catch(
+                                (err) => {
+                                    console.log(err);
+                                    res.status(200).json({
+                                        success: false,
+                                        status: 'red',
+                                        message: 'что то пошло не так',
+                                        data: {
+                                            code: 500,
+                                            message: err
+                                        }
+                                    });
+                                }
+                            );
+                        }).catch(
+                            (err) => {
+                                console.log(err);
+                                res.status(200).json({
+                                    success: false,
+                                    status: 'red',
+                                    message: 'Что то пошло не так',
+                                    data: {
+                                        code: 500,
+                                        message: err
+                                    }
+                                });
+                            }
+                        );
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
+        
     });
 
     app.use('/promo-stickers', router);

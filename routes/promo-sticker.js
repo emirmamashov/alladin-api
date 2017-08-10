@@ -126,7 +126,7 @@ module.exports = (app, db) => {
         );
     });
 
-        // update promosticker data
+    // update promosticker data
     router.put('/update/:id', (req, res) => {
         let _id = req.params.id;
         if (!_id || !ObjectId.isValid(_id)) {

@@ -45,8 +45,10 @@ module.exports = (app, db) => {
                 message: 'Успешный вход',
                 data: {
                     code: 200,
-                    user: user,
-                    token: token
+                    data: {
+                        user: user,
+                        token: token
+                    }
                 }
             });
           }

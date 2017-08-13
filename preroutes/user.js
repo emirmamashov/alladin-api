@@ -6,14 +6,17 @@ module.exports = (filters) => {
     filters['user'] = filters['user'] || {};
     filters.user.authRequired = () => {
         return (req, res, next) => {
-            if (!red.decoded) {
+            if (!req.decoded) {
                 return res.status(200).json({
                     success: false,
                     message: 'Вы не авторизованы',
                     status: 'yellow',
                     data: {
                         code: 403,
-                        message: 'Not authorize'
+                        message: 'Not authorize',
+                        data: {
+                            isNotAuth: true
+                        }
                     }
                 });
             }

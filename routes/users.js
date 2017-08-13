@@ -14,7 +14,7 @@ module.exports = (app, db) => {
     let filters = app.get('filters');
 
     // get all
-    router.get('/', (req, res) => {
+    router.get('/', filters.user.authRequired(), (req, res) => {
         db.User.find().then(
             (users) => {
                 if (users.length > 0) {
@@ -52,7 +52,7 @@ module.exports = (app, db) => {
     });
 
     // add new
-    router.post('/add', filters.input.validate(userForm), (req, res) => {
+    router.post('/add', filters.user.authRequired(), filters.input.validate(userForm), (req, res) => {
       console.log(req.body);
       db.User.findOne({email: req.body.email}).then(
         (find_user) => {
@@ -121,7 +121,7 @@ module.exports = (app, db) => {
     });
 
     // update user data
-    router.put('/update/:id', filters.input.validate(userForm), (req, res) => {
+    router.put('/update/:id', filters.user.authRequired(), filters.input.validate(userForm), (req, res) => {
         let _id = req.params.id;
         if (!_id || !ObjectId.isValid(_id)) {
             return res.status(200).json({
@@ -203,7 +203,7 @@ module.exports = (app, db) => {
               );
     });
 
-    router.delete('/remove/:id', (req, res) => {
+    router.delete('/remove/:id', filters.user.authRequired(), (req, res) => {
         let _id = req.params.id;
         if(!_id || !ObjectId.isValid(_id)) {
             return res.status(200).json({

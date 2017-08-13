@@ -14,7 +14,7 @@ module.exports = (app, db) => {
     let config = app.get('config');
 
     // get all
-    router.get('/', (req, res) => {
+    router.get('/', filters.user.authRequired(), (req, res) => {
         db.Banner.find().then(
             (banners) => {
                 res.status(200).json({
@@ -51,15 +51,17 @@ module.exports = (app, db) => {
         console.log(req.body);
         photoService.uploadMultiple(req, res).then(
             (files) => {
-                filters.input.validate(bannerForm);
                 let newBanner = new db.Banner(req.body);
-                let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
-                newBanner.image = urlPhoto;
-                files.forEach((file) => {
-                    if (file) {
-                        newBanner.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
-                    }
-                });
+
+                if (files && files.length > 0) {
+                    let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
+                    newBanner.image = urlPhoto;
+                    files.forEach((file) => {
+                        if (file) {
+                            newBanner.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
+                        }
+                    });
+                }
                 newBanner.category = ObjectId.isValid(newBanner.category) ? newBanner.category : null;
                 newBanner.save().then(
                     (banner) => {

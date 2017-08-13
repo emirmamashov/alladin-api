@@ -17,6 +17,11 @@ module.exports = (app, db) => {
     router.get('/', (req, res) => {
         db.User.find().then(
             (users) => {
+                if (users.length > 0) {
+                    users.forEach((user) => {
+                        user.password = crypto.decrypt(user.password);
+                    });
+                }
                 res.status(200).json({
                     success: true,
                     status: 'green',
@@ -49,39 +54,70 @@ module.exports = (app, db) => {
     // add new
     router.post('/add', filters.input.validate(userForm), (req, res) => {
       console.log(req.body);
-      let encryptPassword = crypto.encrypt(req.body.password);
-      let user = new db.User(req.body);
-      user.password = encryptPassword;
-
-      user.save().then(
-          (promoSticker) => {
-              res.status(200).json({
-                  success: true,
-                  status: 'green',
-                  message: 'Успешно добавлено',
-                  data: {
-                      code: 201,
-                      message: 'add new',
-                      data: {
-                          user: user
-                      }
-                  }
-              });
-          }
-      ).catch(
-          (err) => {
-              //console.log(err);
-              res.status(200).json({
-                  success: false,
-                  status: 'red',
-                  message: 'Что то пошло не так',
-                  data: {
-                      code: 500,
-                      message: err
-                  }
-              });
-          }
-      );
+      db.User.findOne({email: req.body.email}).then(
+        (find_user) => {
+            if (find_user) {
+                return res.status(200).json({
+                    success: false,
+                    status: 'yellow',
+                    message: 'Пользователь с такой почтой уже зарегистрирован',
+                    data: {
+                        code: 403,
+                        message: 'user dublicate',
+                        data: {
+                            user: find_user
+                        }
+                    }
+                });
+            }
+            let encryptPassword = crypto.encrypt(req.body.password);
+            let user = new db.User(req.body);
+            user.password = encryptPassword;
+        
+            user.save().then(
+                (promoSticker) => {
+                    res.status(200).json({
+                        success: true,
+                        status: 'green',
+                        message: 'Успешно добавлено',
+                        data: {
+                            code: 201,
+                            message: 'add new',
+                            data: {
+                                user: user
+                            }
+                        }
+                    });
+                }
+            ).catch(
+                (err) => {
+                    //console.log(err);
+                    res.status(200).json({
+                        success: false,
+                        status: 'red',
+                        message: 'Что то пошло не так',
+                        data: {
+                            code: 500,
+                            message: err
+                        }
+                    });
+                }
+            );
+        }
+        ).catch(
+            (err) => {
+                //console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
     });
 
     // update user data
@@ -98,6 +134,7 @@ module.exports = (app, db) => {
                 }
             });
         }
+        console.log(req.body);
         db.User.findById(_id).then(
           (user) => {
               if (!user) {
@@ -120,7 +157,7 @@ module.exports = (app, db) => {
 
               let encryptPassword = crypto.encrypt(req.body.password);
               user.password = encryptPassword ? encryptPassword : user.password;
-              user.isAdmin = req.body.isAdmin ? req.body.isAdmin : user.isAdmin;
+              user.isAdmin = req.body.isAdmin ? true : false;
 
               user.save().then(
                   (updatedUser) => {

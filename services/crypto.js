@@ -14,6 +14,7 @@ module.exports = {
     },
 
     decrypt(text) {
+        console.log(text);
         if (!text) {
             return text;
         }

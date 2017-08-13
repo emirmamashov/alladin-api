@@ -48,7 +48,9 @@ module.exports = {
 
     },
     email: {
-
+        presence: {
+            message: '^Почта объязательное поле'
+        }
     },
     password: {
         presence: {

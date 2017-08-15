@@ -126,6 +126,13 @@ module.exports = (app, db) => {
                         }
                     });
                 }
+                if (newProduct.filters && newProduct.filters.length > 0) {
+                    newProduct.filters.forEach((filterId) => {
+                        if (ObjectId.isValid(filterId)) {
+                            newProduct.filters.push(filterId);
+                        }
+                    });
+                }
 
                 console.log(newProduct);
                 newProduct.save().then(
@@ -257,10 +264,19 @@ module.exports = (app, db) => {
                         product.promoStickerId = ObjectId.isValid(req.body.promoStickerId) ? req.body.promoStickerId : null;
                         product.producerId = ObjectId.isValid(req.body.producerId) ? req.body.producerId : null;
                         product.categoryId = ObjectId.isValid(req.body.categoryId) ? req.body.categoryId : null;
-                        if (product.categories && product.categories.length > 0) {
-                            product.categories.forEach((categoryId) => {
-                                if (ObjectId.isValid(categoryId)) {
+                        if (req.body.categories && req.body.categories.length > 0) {
+                            req.body.categories.forEach((categoryId) => {
+                                let findProduct = product.categories.filter(x => x == categoryId)[0];
+                                if (!findProduct && ObjectId.isValid(categoryId)) {
                                     product.categories.push(categoryId);
+                                }
+                            });
+                        }
+                        if (req.body.filters && req.body.filters.length > 0) {
+                            req.body.filters.forEach((filterId) => {
+                                let findFilter = product.filters.filter(x => x == filterId)[0];
+                                if (!findFilter && ObjectId.isValid(filterId)) {
+                                    product.filters.push(filterId);
                                 }
                             });
                         }

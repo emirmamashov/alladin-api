@@ -380,7 +380,6 @@ module.exports = (app, db) => {
                 let translit_name = translitService.translitToLatin(name);
                 let translit_for_seo = translitService.translitToLatinForSeoUrl(name);
                 if (name) {
-                    console.log(mongoose.Types.ObjectId.isValid('53cb6b9b4f4ddef1ad47f943'));
                     let product_categoryIds_string = product['ID категорий где будет отображаться товар, через запятую'] || '';
                     let categoryIds = [];
                     if (product_categoryIds_string) {
@@ -405,12 +404,12 @@ module.exports = (app, db) => {
                         priceStock: product['Цена акции'] || 0,
                         priceTrade: product['Оптовая цена'] || 0,
                         seoUrl: translit_for_seo,
-                        producerId: product['ID производителя'] || '',
-                        categoryId: product['ID категория'] || '',
+                        producerId: product['ID производителя'] || null,
+                        categoryId: product['ID категория'] || null,
                         categories: categoryIds
                     }
                     console.log(newProductValid);
-                    if (ObjectId.isValid(newProductValid.producerId) && ObjectId.isValid(newProductValid.categoryId)) {
+                    if (ObjectId.isValid(newProductValid.categoryId)) {
                         let newProduct = new db.Product(newProductValid);
                         productsPromise.push(newProduct.save());
                     } else {
@@ -424,13 +423,14 @@ module.exports = (app, db) => {
                     console.log('--name is null');
                     importFailedProducts.push({
                         product: product,
-                        error: 'Наименование отсутствует или неправильного формата'
+                        error: 'Название товара отсутствует или неправильного формата'
                     });
                 }
             });
 
             Promise.all(productsPromise).then(
                 (products) => {
+                    console.log(importFailedProducts);
                     res.status(200).json({
                         success: true,
                         status: 'green',

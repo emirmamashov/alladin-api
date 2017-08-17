@@ -403,6 +403,7 @@ module.exports = (app, db) => {
                         phone: product['Телефон'] || 000,
                         price: product['Цена'] || 0,
                         priceStock: product['Цена акции'] || 0,
+                        priceTrade: product['Оптовая цена'] || 0,
                         seoUrl: translit_for_seo,
                         producerId: product['ID производителя'] || '',
                         categoryId: product['ID категория'] || '',

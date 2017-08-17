@@ -6,6 +6,7 @@ module.exports = (filters) => {
     filters['user'] = filters['user'] || {};
     filters.user.authRequired = () => {
         return (req, res, next) => {
+            console.log(req.body);
             if (!req.decoded) {
                 return res.status(200).json({
                     success: false,

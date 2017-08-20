@@ -14,7 +14,7 @@ module.exports = (app, db) => {
     let config = app.get('config');
 
     // get all
-    router.get('/', filters.user.authRequired(), (req, res) => {
+    router.get('/', (req, res) => {
         db.Banner.find().then(
             (banners) => {
                 res.status(200).json({
@@ -145,62 +145,184 @@ module.exports = (app, db) => {
         );
     });
 
-
     // update banner data
-    router.put('/update/:id', filters.input.validate(bannerForm), (req, res) => {
+    router.put('/update/:id', (req, res) => {
         let _id = req.params.id;
-        db.Banner.findById(_id).then(
+        if (!_id || !ObjectId.isValid(_id)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметер неправильно передано',
+                data: {
+                    code: 403,
+                    message: 'Parameters not valid'
+                }
+            });
+        }
+
+        photoService.uploadMultiple(req, res).then(
+            (files) => {
+                db.Banner.findById(_id).then(
+                    (banner) => {
+                        if (!banner) {
+                            return res.status(200).json({
+                                success: false,
+                                message: 'Баннер не найдено',
+                                status: 'yellow',
+                                data: {
+                                    code: 404,
+                                    message: 'banner not found'
+                                }
+                            });
+                        }
+                        
+                        let updateImagesArr = req.body.images;
+                        let removeImagesPromise = [];
+                        if (updateImagesArr && banner.images && banner.images.length > 0) {
+                            banner.images.forEach((url) => {
+                                let imageFind = updateImagesArr.filter(x => x === url);
+                                if (imageFind.length === 0) {
+                                    removeImagesPromise.push(photoService.remove(url)); // delete image
+                                    banner.images = banner.images.filter(x => x !== url);
+                                }
+                            });
+                        }
+                        
+                        if (files && files.length > 0) {
+                            let urlPhoto = files ? '/uploads' + files[0].path.replace(config.UPLOAD_DIR, '') : '';
+                            banner.image = urlPhoto;
+                            files.forEach((file) => {
+                                if (file) {
+                                    banner.images.push('/uploads' + file.path.replace(config.UPLOAD_DIR, ''));
+                                }
+                            });
+                        }
+
+                        banner.name = req.body.name ? req.body.name : banner.name;
+                        banner.category = ObjectId.isValid(req.body.category) ? req.body.category : banner.category;
+                        banner.buttonLink = req.body.buttonLink ? req.body.buttonLink : banner.buttonLink;
+                        banner.buttonName = req.body.buttonName ? req.body.buttonName : banner.buttonName;
+                        banner.isShowInMainPage = req.body.isShowInMainPage ? true : false;
+
+                        banner.save().then(
+                            (updatedBanner) => {
+                                Promise.all(removeImagesPromise).then(
+                                    (response) => {
+                                        console.log(response);
+                                    }).catch((err) => {
+                                        console.log(err);
+                                    });
+                                res.status(200).json({
+                                    success: true,
+                                    status: 'green',
+                                    message: 'Данные баннера успешно обнавлены',
+                                    data: {
+                                        code: 200,
+                                        message: 'Updated successful',
+                                        data: {
+                                            banner: updatedBanner
+                                        }
+                                    }
+                                });
+                            }).catch(
+                                (err) => {
+                                    console.log(err);
+                                    res.status(200).json({
+                                        success: false,
+                                        status: 'red',
+                                        message: 'что то пошло не так',
+                                        data: {
+                                            code: 500,
+                                            message: err
+                                        }
+                                    });
+                                }
+                            );
+                        }).catch(
+                            (err) => {
+                                console.log(err);
+                                res.status(200).json({
+                                    success: false,
+                                    status: 'red',
+                                    message: 'Что то пошло не так',
+                                    data: {
+                                        code: 500,
+                                        message: err
+                                    }
+                                });
+                            }
+                        );
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
+        
+    });
+
+    router.delete('/remove/:id', (req, res) => {
+        let _id = req.params.id;
+        if(!_id || !ObjectId.isValid(_id)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметры неправильного формата',
+                data: {
+                    code: 403,
+                    message: 'Parameter not valid'
+                }
+            });
+        }
+
+        db.Banner.findByIdAndRemove(_id).then(
             (banner) => {
-                if (!banner) {
+                if(!banner) {
                     return res.status(200).json({
                         success: false,
-                        message: 'Баннер не найден',
                         status: 'yellow',
+                        message: 'Не найдено',
                         data: {
                             code: 404,
-                            message: 'Banner not found'
+                            message: 'not found'
                         }
                     });
                 }
-
-                banner.name = req.body.name ? req.body.name : banner.name;
-                banner.photo = req.body.photo ? req.body.photo : banner.photo;
-                if (banner.buttonLink || req.body.buttonLink) {
-                    banner.buttonLink = req.body.buttonLink ? req.body.buttonLink : category.buttonLink;
-                }
-                if (banner.buttonName || req.body.buttonName) {
-                    banner.buttonName = req.body.buttonName ? req.body.buttonName : category.buttonName;
+                let photoRemovePromise = [];
+                if (banner.images && banner.images.length > 0) {
+                    banner.images.forEach((url) => {
+                        photoRemovePromise.push(photoService.remove(url));
+                    });
                 }
 
-                banner.save().then(
-                    (updatedBanner) => {
-                        res.status(200).json({
-                            success: true,
-                            status: 'green',
-                            message: 'Данные баннера успешно обнавлены',
-                            data: {
-                                code: 200,
-                                message: 'Updated successful',
-                                data: {
-                                    banner: updatedBanner
-                                }
-                            }
-                        });
-                    }
-                ).catch(
-                    (err) => {
+                Promise.all(photoRemovePromise).then(
+                    (response) => {
+                        console.log(response);
+                    }).catch((err) => {
                         console.log(err);
-                        res.status(200).json({
-                            success: false,
-                            status: 'red',
-                            message: 'что то пошло не так',
-                            data: {
-                                code: 500,
-                                message: err
-                            }
-                        });
+                    });
+
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно удалено',
+                    data: {
+                        code: 200,
+                        message: 'Success delete category',
+                        data: {
+                            banner: banner
+                        }
                     }
-                );
+                });
             }
         ).catch(
             (err) => {

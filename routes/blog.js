@@ -7,7 +7,7 @@ let ObjectId = mongoose.Types.ObjectId;
 let crypto = require('../services/crypto');
 
 // validate forms
-let userForm = require('../forms/user');
+let blogForm = require('../forms/blog');
 
 module.exports = (app, db) => {
     let config = app.get('config');
@@ -15,13 +15,8 @@ module.exports = (app, db) => {
 
     // get all
     router.get('/', filters.user.authRequired(), (req, res) => {
-        db.User.find().then(
-            (users) => {
-                if (users.length > 0) {
-                    users.forEach((user) => {
-                        user.password = crypto.decrypt(user.password);
-                    });
-                }
+        db.Blog.find().then(
+            (blogs) => {
                 res.status(200).json({
                     success: true,
                     status: 'green',
@@ -30,7 +25,7 @@ module.exports = (app, db) => {
                         code: 200,
                         message: 'ok',
                         data: {
-                            users: users
+                            blogs: blogs
                         }
                     }
                 });
@@ -52,30 +47,28 @@ module.exports = (app, db) => {
     });
 
     // add new
-    router.post('/add', filters.user.authRequired(), filters.input.validate(userForm), (req, res) => {
+    router.post('/add', filters.user.authRequired(), filters.input.validate(blogForm), (req, res) => {
       console.log(req.body);
-      db.User.findOne({email: req.body.email}).then(
-        (find_user) => {
-            if (find_user) {
+      db.Blog.findOne({name: req.body.name}).then(
+        (find_blog) => {
+            if (find_blog) {
                 return res.status(200).json({
                     success: false,
                     status: 'yellow',
-                    message: 'Пользователь с такой почтой уже зарегистрирован',
+                    message: 'Блог с таким именем уже зарегистрирован',
                     data: {
                         code: 403,
-                        message: 'user dublicate',
+                        message: 'blog dublicate',
                         data: {
-                            user: find_user
+                            blog: find_blog
                         }
                     }
                 });
             }
-            let encryptPassword = crypto.encrypt(req.body.password);
-            let user = new db.User(req.body);
-            user.password = encryptPassword;
+            let blog = new db.Blog(req.body);
         
-            user.save().then(
-                (saveUser) => {
+            blog.save().then(
+                (saveBlog) => {
                     res.status(200).json({
                         success: true,
                         status: 'green',
@@ -84,7 +77,7 @@ module.exports = (app, db) => {
                             code: 201,
                             message: 'add new',
                             data: {
-                                user: saveUser
+                                blog: saveBlog
                             }
                         }
                     });
@@ -121,7 +114,7 @@ module.exports = (app, db) => {
     });
 
     // update user data
-    router.put('/update/:id', filters.user.authRequired(), filters.input.validate(userForm), (req, res) => {
+    router.put('/update/:id', filters.user.authRequired(), filters.input.validate(blogForm), (req, res) => {
         let _id = req.params.id;
         if (!_id || !ObjectId.isValid(_id)) {
             return res.status(200).json({
@@ -135,9 +128,9 @@ module.exports = (app, db) => {
             });
         }
         console.log(req.body);
-        db.User.findById(_id).then(
-          (user) => {
-              if (!user) {
+        db.Blog.findById(_id).then(
+          (blog) => {
+              if (!blog) {
                   return res.status(200).json({
                       success: false,
                       message: 'Пользователь не найдено',
@@ -149,27 +142,25 @@ module.exports = (app, db) => {
                   });
               }
 
-              user.first_name = req.body.first_name ? req.body.first_name : user.first_name;
-              user.last_name = req.body.last_name ? req.body.last_name : user.last_name;
-              user.phone = req.body.phone ? req.body.phone : user.phone;
-              user.address = req.body.address ? req.body.address : user.address;
-              user.email = req.body.email ? req.body.email : user.email;
+              if (req.body.name) blog.name = req.body.name;
+              if (req.body.htmlH1) blog.htmlH1 = req.body.htmlH1;
+              if (req.body.htmlTitle) blog.htmlTitle = req.body.htmlTitle;
+              if (req.body.metaDescription) blog.metaDescription = req.body.metaDescription;
+              if (req.body.metaKeywords) blog.metaKeywords = req.body.metaKeywords;
+              if (req.body.text) blog.text = req.body.text;
+              if (req.body.seoUrl) blog.seoUrl = req.body.seoUrl;
 
-              let encryptPassword = crypto.encrypt(req.body.password);
-              user.password = encryptPassword ? encryptPassword : user.password;
-              user.isAdmin = req.body.isAdmin ? true : false;
-
-              user.save().then(
-                  (updatedUser) => {
+              blog.save().then(
+                  (updatedBlog) => {
                       res.status(200).json({
                           success: true,
                           status: 'green',
-                          message: 'Данные о пользователе успешно обнавлены',
+                          message: 'Данные о блоге успешно обнавлены',
                           data: {
                               code: 200,
                               message: 'Updated successful',
                               data: {
-                                  user: updatedUser
+                                  blog: updatedBlog
                               }
                           }
                       });
@@ -217,9 +208,9 @@ module.exports = (app, db) => {
             });
         }
 
-        db.User.findByIdAndRemove(_id).then(
-            (user) => {
-                if(!user) {
+        db.Blog.findByIdAndRemove(_id).then(
+            (blog) => {
+                if(!blog) {
                     return res.json({
                         success: false,
                         status: 'yellow',
@@ -239,7 +230,7 @@ module.exports = (app, db) => {
                         code: 200,
                         message: 'Success delete user',
                         data: {
-                            user: user
+                            blog: blog
                         }
                     }
                 });
@@ -260,5 +251,5 @@ module.exports = (app, db) => {
         );
     });
 
-    app.use('/users', router);
+    app.use('/blogs', router);
 }

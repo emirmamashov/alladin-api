@@ -44,5 +44,11 @@ module.exports = {
     metaKeywords: {
     },
     seoUrl: {
+    },
+    isShowInMainPage: {
+
+    },
+    countViewers: {
+        
     }
 };

@@ -150,7 +150,7 @@ module.exports = (app, db) => {
               if (req.body.text) blog.text = req.body.text;
               if (req.body.seoUrl) blog.seoUrl = req.body.seoUrl;
               if (req.body.countViewers) blog.countViewers = req.body.countViewers;
-              blog.isShowInMainPage = req.body.isShowInMainPage ? true : false;
+              blog.isShowInMainPage = req.body.isShowInMainPage || false;
 
               blog.save().then(
                   (updatedBlog) => {

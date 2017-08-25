@@ -202,8 +202,10 @@ module.exports = (app, db) => {
                         banner.category = ObjectId.isValid(req.body.category) ? req.body.category : banner.category;
                         banner.buttonLink = req.body.buttonLink ? req.body.buttonLink : banner.buttonLink;
                         banner.buttonName = req.body.buttonName ? req.body.buttonName : banner.buttonName;
-                        banner.isShowInMainPage = req.body.isShowInMainPage ? true : false;
-
+                        banner.isShowInMainPage = req.body.isShowInMainPage;
+                        banner.showInMainPageLeft = req.body.showInMainPageLeft;
+                        banner.showInMainPageRight = req.body.showInMainPageRight;
+                        console.log(banner);
                         banner.save().then(
                             (updatedBanner) => {
                                 Promise.all(removeImagesPromise).then(

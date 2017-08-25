@@ -226,8 +226,8 @@ module.exports = (app, db) => {
                         category.description = req.body.description ? req.body.description : category.description;
                         category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
                         category.author = req.body.author ? req.body.author : category.author;
-                        category.viewInMenu = req.body.viewInMenu ? req.body.viewInMenu : category.viewInMenu;
-                        category.viewInLikeBlock = req.body.viewInLikeBlock ? req.body.viewInLikeBlock : category.viewInLikeBlock;
+                        category.viewInMenu = req.body.viewInMenu || false;
+                        category.viewInLikeBlock = req.body.viewInLikeBlock || false;
 
                         category.save().then(
                             (updatedCategory) => {

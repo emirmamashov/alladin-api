@@ -157,7 +157,7 @@ module.exports = (app, db) => {
 
               let encryptPassword = crypto.encrypt(req.body.password);
               user.password = encryptPassword ? encryptPassword : user.password;
-              user.isAdmin = req.body.isAdmin ? true : false;
+              user.isAdmin = req.body.isAdmin || false;
 
               user.save().then(
                   (updatedUser) => {

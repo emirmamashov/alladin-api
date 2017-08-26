@@ -22,5 +22,11 @@ module.exports = {
     },
     category: {
 
+    },
+    showInMainPageLeft: {
+
+    },
+    showInMainPageRight: {
+        
     }
 };

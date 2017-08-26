@@ -53,5 +53,11 @@ module.exports = {
     },
     banner: {
         
+    },
+    showInMainPageLeft: {
+
+    },
+    showInMainPageRight: {
+        
     }
 };

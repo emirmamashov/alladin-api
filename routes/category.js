@@ -228,6 +228,8 @@ module.exports = (app, db) => {
                         category.author = req.body.author ? req.body.author : category.author;
                         category.viewInMenu = req.body.viewInMenu || false;
                         category.viewInLikeBlock = req.body.viewInLikeBlock || false;
+                        category.showInMainPageLeft = req.body.showInMainPageLeft || false;
+                        category.showInMainPageRight = req.body.showInMainPageRight || false;
 
                         category.save().then(
                             (updatedCategory) => {

@@ -119,7 +119,8 @@ module.exports = (app, db) => {
                 newProduct.promoStickerId = ObjectId.isValid(newProduct.promoStickerId) ? newProduct.promoStickerId : null;
                 newProduct.producerId = ObjectId.isValid(newProduct.producerId) ? newProduct.producerId : null;
                 newProduct.categoryId = ObjectId.isValid(newProduct.categoryId) ? newProduct.categoryId : null;
-                if (newProduct.categories && newProduct.categories.length > 0) {
+                newProduct.categories = newProduct.categories || [];
+                if (newProduct.categories.length > 0) {
                     newProduct.categories.forEach((categoryId) => {
                         if (ObjectId.isValid(categoryId)) {
                             newProduct.categories.push(categoryId);

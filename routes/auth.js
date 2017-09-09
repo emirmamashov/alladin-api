@@ -150,7 +150,7 @@ module.exports = (app, db) => {
         );
     });
 
-    router.get('/check-auth', filters.user.authRequired(), (res, res) => {
+    router.get('/check-auth', filters.user.authRequired(), (req, res) => {
         res.status(200).json({
             status: 'green',
             message: 'Вы авторизованы',

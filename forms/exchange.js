@@ -21,14 +21,17 @@ validator.async.options = {
 };
 
 module.exports = {
-    email: {
+    dollar: {
         presence: {
-            message: '^Email объязательное поле'
-        },
-    },
-    password: {
-        presence: {
-            message: '^Пароль объязательное поле'
+            message: '^Доллар объязательное поле'
         }
+    },
+    euro: {
+    },
+    ruble: {
+    },
+    tenge: {
+    },
+    yen: {
     }
 };

@@ -150,5 +150,20 @@ module.exports = (app, db) => {
         );
     });
 
+    router.get('/check-auth', filters.user.authRequired(), (res, res) => {
+        res.status(200).json({
+            status: 'green',
+            message: 'Вы авторизованы',
+            success: true,
+            data: {
+                code: 200,
+                data: {
+                    isNotAuth: false
+                },
+                message: 'Auth true'
+            }
+        });
+    });
+
     app.use('/auth', router);
 }

@@ -4,7 +4,7 @@ let mongoose = require('mongoose');
 let ObjectId = mongoose.Types.ObjectId;
 
 // services
-let crypto = require('../services/crypto');
+let exchageService = require('../services/exchange');
 
 // validate forms
 let exchangeForm = require('../forms/exchange');
@@ -15,20 +15,25 @@ module.exports = (app, db) => {
 
     // get all
     router.get('/', filters.user.authRequired(), (req, res) => {
-        db.Exchange.find().then(
-            (blogs) => {
-                res.status(200).json({
-                    success: true,
-                    status: 'green',
-                    message: 'Успешно получено',
-                    data: {
-                        code: 200,
-                        message: 'ok',
-                        data: {
-                            exchange: exchanges[0]
-                        }
+
+        db.Exchange.findOne().then(
+            (exchange) => {
+                exchageService.dailyExchange().then(
+                    (result) => {
+                        res.status(200).json({
+                            success: true,
+                            status: 'green',
+                            message: 'Успешно получено',
+                            data: {
+                                code: 200,
+                                message: 'ok',
+                                data: {
+                                    exchange: exchange
+                                }
+                            }
+                        });
                     }
-                });
+                ).catch();
             }
         ).catch(
             (err) => {

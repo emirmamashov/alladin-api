@@ -4,6 +4,7 @@ module.exports = {
     UPLOAD_DIR: __dirname + '/public/uploads',
     secret: 'asddpfosjkgnalskdoierj',
     STATIC_DIR: __dirname + '/public',
+    NBKRExchangeXMLUrl: 'http://www.nbkr.kg/XML/daily.xml',
     Translit_alhabets: {
         'А': 'A',
         'а': 'a',

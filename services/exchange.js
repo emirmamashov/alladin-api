@@ -31,22 +31,22 @@ module.exports = {
 
                     let usd = result.Currency.filter(x => x.$.ISOCode == 'USD')[0];
                     if (usd) {
-                        newExchange.usd = parseFloat(usd.Value[0]);
+                        newExchange.usd = parseFloat(usd.Value[0].replace(',','.'));
                     }
 
                     let eur = result.Currency.filter(x => x.$.ISOCode == 'EUR')[0];
                     if (eur) {
-                        newExchange.eur = parseFloat(eur.Value[0]);
+                        newExchange.eur = parseFloat(eur.Value[0].replace(',','.'));
                     }
 
                     let kzt = result.Currency.filter(x => x.$.ISOCode == 'KZT')[0];
                     if (kzt) {
-                        newExchange.kzt = parseFloat(kzt.Value[0]);
+                        newExchange.kzt = parseFloat(kzt.Value[0].replace(',','.'));
                     }
                     
                     let rub = result.Currency.filter(x => x.$.ISOCode == 'RUB')[0];
                     if (rub) {
-                        newExchange.rub = parseFloat(rub.Value[0]);
+                        newExchange.rub = parseFloat(rub.Value[0].replace(',','.'));
                     }
 
                     resolve(newExchange);

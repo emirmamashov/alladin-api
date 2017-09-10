@@ -18,6 +18,57 @@ module.exports = (app, db) => {
 
         db.Exchange.findOne().then(
             (exchange) => {
+                if (!exchange) {
+                    return exchageService.dailyExchange().then(
+                        (result) => {
+                            let newExchange = new db.Exchange(result);
+                            if (!newExchange.usd) newExchange.usd = 69;
+                            console.log(result);
+                            newExchange.save().then(
+                                (savedExchange) => {
+                                    res.status(200).json({
+                                        success: true,
+                                        status: 'green',
+                                        message: 'Успешно получено',
+                                        data: {
+                                            code: 200,
+                                            message: 'ok',
+                                            data: {
+                                                exchange: savedExchange
+                                            }
+                                        }
+                                    });
+                                }
+                            ).catch(
+                                (err) => {
+                                    console.log(err);
+                                    res.status(200).json({
+                                        success: false,
+                                        status: 'red',
+                                        message: 'Что то пошла не так',
+                                        data: {
+                                            code: 500,
+                                            message: err
+                                        }
+                                    });
+                                }
+                            );
+                        }
+                    ).catch(
+                        (err) => {
+                            console.log(err);
+                            res.status(200).json({
+                                success: false,
+                                status: 'red',
+                                message: 'Что то пошла не так',
+                                data: {
+                                    code: 500,
+                                    message: err
+                                }
+                            });
+                        }
+                    );
+                }
                 exchageService.dailyExchange().then(
                     (result) => {
                         res.status(200).json({
@@ -33,7 +84,20 @@ module.exports = (app, db) => {
                             }
                         });
                     }
-                ).catch();
+                ).catch(
+                    (err) => {
+                        console.log(err);
+                        res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошла не так',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
             }
         ).catch(
             (err) => {

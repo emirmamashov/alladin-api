@@ -15,19 +15,39 @@ module.exports = (app, db) => {
 
     // get all
     router.get('/', (req, res) => {
-        db.Category.find().then(
-            (categories) => {
-                res.status(200).json({
-                    success: true,
-                    status: 'green',
-                    message: 'Успешно',
-                    data: {
-                        code: 200,
+
+        db.Category.count().then(
+            (count) => {
+                console.log(count);
+                let page = parseInt(req.query.page) || 1;
+                let limit = parseInt(req.query.limit) || count;
+                console.log(req.query, page, limit);
+                db.Category.paginate({}, { page: page, limit: limit },(err, result) => {
+                    if (err) {
+                        console.log(err);
+                        return res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так(',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                    res.status(200).json({
+                        success: true,
+                        status: 'green',
                         message: 'Успешно',
                         data: {
-                            categories: categories
+                            code: 200,
+                            message: 'ok',
+                            data: {
+                                categories: result.docs,
+                                count: count
+                            }
                         }
-                    }
+                    });
                 });
             }
         ).catch(

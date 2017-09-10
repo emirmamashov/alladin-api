@@ -69,35 +69,83 @@ module.exports = (app, db) => {
                         }
                     );
                 }
-                exchageService.dailyExchange().then(
-                    (result) => {
-                        res.status(200).json({
-                            success: true,
-                            status: 'green',
-                            message: 'Успешно получено',
-                            data: {
-                                code: 200,
-                                message: 'ok',
-                                data: {
-                                    exchange: exchange
+
+                let updateDate = new Date(exchange.update_at);
+                let dateNow = new Date();
+                if (updateDate.getDate() != dateNow.getDate() || updateDate.getMonth() != dateNow.getMonth()
+                || updateDate.getFullYear() != dateNow.getFullYear()) {
+                    return exchageService.dailyExchange().then(
+                        (result) => {
+                            if (result.usd) {
+                                exchange.usd = result.usd;
+                            }
+                            if (result.eur) {
+                                exchange.eur = result.eur;
+                            }
+                            if (result.kzt) {
+                                exchange.kzt = result.kzt;
+                            }
+                            if (result.rub) {
+                                exchange.rub = result.rub;
+                            }
+                            exchange.save().then(
+                                (savedExchange) => {
+                                    res.status(200).json({
+                                        success: true,
+                                        status: 'green',
+                                        message: 'Успешно получено',
+                                        data: {
+                                            code: 200,
+                                            message: 'ok',
+                                            data: {
+                                                exchange: savedExchange
+                                            }
+                                        }
+                                    });
                                 }
-                            }
-                        });
+                            ).catch(
+                                (err) => {
+                                    console.log(err);
+                                    res.status(200).json({
+                                        success: false,
+                                        status: 'red',
+                                        message: 'Что то пошла не так',
+                                        data: {
+                                            code: 500,
+                                            message: err
+                                        }
+                                    });
+                                }
+                            );
+                        }
+                    ).catch(
+                        (err) => {
+                            console.log(err);
+                            res.status(200).json({
+                                success: false,
+                                status: 'red',
+                                message: 'Что то пошла не так',
+                                data: {
+                                    code: 500,
+                                    message: err
+                                }
+                            });
+                        }
+                    );
+                }
+                console.log('last version');
+                res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Успешно получено',
+                    data: {
+                        code: 200,
+                        message: 'ok',
+                        data: {
+                            exchange: exchange
+                        }
                     }
-                ).catch(
-                    (err) => {
-                        console.log(err);
-                        res.status(200).json({
-                            success: false,
-                            status: 'red',
-                            message: 'Что то пошла не так',
-                            data: {
-                                code: 500,
-                                message: err
-                            }
-                        });
-                    }
-                );
+                });
             }
         ).catch(
             (err) => {

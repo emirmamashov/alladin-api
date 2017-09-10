@@ -18,27 +18,16 @@ module.exports = (app, db) => {
 
     // get all products
     router.get('/', (req, res) => {
-        db.Product.find().then(
-            (products) => {
-                db.Photo.find().then(
-                    (photos) => {
-                        res.status(200).json({
-                            success: true,
-                            status: 'green',
-                            message: 'Успешно',
-                            data: {
-                                code: 200,
-                                message: 'ok',
-                                data: {
-                                    products: products,
-                                    photos: photos
-                                }
-                            }
-                        });
-                    }
-                ).catch(
-                    (err) => {
-                        res.status(200).json({
+        let page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 20;
+        console.log(req.query, page, limit);
+        db.Product.count().then(
+            (count) => {
+                console.log(count);
+                db.Product.paginate({}, { page: page, limit: limit },(err, result) => {
+                    if (err) {
+                        console.log(err);
+                        return res.status(200).json({
                             success: false,
                             status: 'red',
                             message: 'Что то пошло не так(',
@@ -48,7 +37,20 @@ module.exports = (app, db) => {
                             }
                         });
                     }
-                );
+                    res.status(200).json({
+                        success: true,
+                        status: 'green',
+                        message: 'Успешно',
+                        data: {
+                            code: 200,
+                            message: 'ok',
+                            data: {
+                                products: result.docs,
+                                allProductCount: count
+                            }
+                        }
+                    });
+                });
             }
         ).catch(
             (err) => {
@@ -63,6 +65,7 @@ module.exports = (app, db) => {
                 });
             }
         );
+        
     });
 
     // get by id

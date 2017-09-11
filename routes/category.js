@@ -16,13 +16,20 @@ module.exports = (app, db) => {
     // get all
     router.get('/', (req, res) => {
 
+        let searchText = req.query.searchtext;
+        let query = {};
+        if (searchText)  {
+            let regex = new RegExp(searchText, 'i');
+            query =  { name: regex };
+        }
+        console.log('query: ', query, 'searchText: ', searchText);
         db.Category.count().then(
             (count) => {
                 console.log(count);
                 let page = parseInt(req.query.page) || 1;
                 let limit = parseInt(req.query.limit) || count;
                 console.log(req.query, page, limit);
-                db.Category.paginate({}, { page: page, limit: limit },(err, result) => {
+                db.Category.paginate(query, { page: page, limit: limit },(err, result) => {
                     if (err) {
                         console.log(err);
                         return res.status(200).json({

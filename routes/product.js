@@ -18,13 +18,20 @@ module.exports = (app, db) => {
 
     // get all products
     router.get('/', (req, res) => {
+
+        let searchText = req.query.searchtext;
+        let query = {};
+        if (searchText)  {
+            let regex = new RegExp(searchText, 'i');
+            query =  { name: regex };
+        }
         let page = parseInt(req.query.page) || 1;
         let limit = parseInt(req.query.limit) || 20;
         console.log(req.query, page, limit);
         db.Product.count().then(
             (count) => {
                 console.log(count);
-                db.Product.paginate({}, { page: page, limit: limit },(err, result) => {
+                db.Product.paginate(query, { page: page, limit: limit },(err, result) => {
                     if (err) {
                         console.log(err);
                         return res.status(200).json({

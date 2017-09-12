@@ -23,7 +23,7 @@ module.exports = (app, db) => {
             query =  { name: regex };
         }
         console.log('query: ', query, 'searchText: ', searchText);
-        db.Category.count().then(
+        db.Category.count(query).then(
             (count) => {
                 console.log(count);
                 let page = parseInt(req.query.page) || 1;

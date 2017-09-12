@@ -28,9 +28,10 @@ module.exports = (app, db) => {
         let page = parseInt(req.query.page) || 1;
         let limit = parseInt(req.query.limit) || 20;
         console.log(req.query, page, limit);
-        db.Product.count().then(
+        db.Product.count(query).then(
             (count) => {
                 console.log(count);
+                
                 db.Product.paginate(query, { page: page, limit: limit },(err, result) => {
                     if (err) {
                         console.log(err);

@@ -13,6 +13,7 @@
     "crypto": "0.0.3",
     "debug": "~2.6.3",
     "express": "~4.15.2",
+    "fs": "0.0.1-security",
     "glob": "^7.1.2",
     "hbs": "~4.0.1",
     "jsonwebtoken": "^7.4.2",
@@ -24,6 +25,7 @@
     "request": "^2.81.0",
     "serve-favicon": "~2.4.2",
     "validate.js": "^0.11.1",
+    "x-ray": "^2.3.2",
     "xlsx": "^0.10.8",
     "xml2js": "^0.4.19"
   }

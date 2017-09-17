@@ -55,18 +55,23 @@ module.exports = {
         console.log('-------------uploadNetwork-------------', url, fileName);
         return new Promise((resolve, reject) => {
             let uniqueName = fileName + '_' + Date.now().toString();
-            let newurl = config.UPLOAD_DIR+'/' + uniqueName;
+            let parseType = url.split('.');
+            let imgType = parseType[parseType.length-1];
+            let newurl = config.UPLOAD_DIR+'/' + uniqueName.replace('/', '') + '.' + imgType;
+            console.log(newurl);
             let streamReq = request(url).on('response', (response, err) => {
                 console.log('---------request download in network----------');
                 if (response.statusCode === 200) {
                     var file = streamReq.pipe(fs.createWriteStream(newurl));
                     file.on('finish',function (err) {
                         console.log(err);
-                        if (err) reject(err);
+                        if (err) {
+                            return resolve();
+                        }
                         resolve('/uploads'+newurl.replace(config.UPLOAD_DIR, ''));
                     });
                 } else {
-                    reject(err);
+                    resolve();
                 }
             });
         });

@@ -1,11 +1,15 @@
+// core
 let xray = require('x-ray')();
-let phantom = require('x-ray-phantom');
-let url = 'http://pioner.kg/catalog';
-let rootUrl = 'http://pioner.kg';
-let async = require('async');
 
 // services
 let photoService = require('../services/photo');
+let chunkService = require('../services/chunk');
+
+// global
+let chunkSize = 200;
+let linksOfProductDetailsChunks = [];
+let url = 'http://pioner.kg/catalog';
+let rootUrl = 'http://pioner.kg';
 
 // parser for pioner.kg
 module.exports = {
@@ -583,15 +587,14 @@ module.exports = {
                                                                 let getProductDetailsPromise = [];
                                                                 let links = [];
                                                                 productCategories.forEach((productCategory) => {
-                                                                    if (productCategory && productCategory.productsLink && productCategory.productsLink.length > 0) {
+                                                                    if (productCategory && 
+                                                                        productCategory.productsLink && 
+                                                                        productCategory.productsLink.length > 0) {
                                                                         productCategory.productsLink.forEach((link) => {
                                                                             links.push({
                                                                                 link: link,
                                                                                 categoryId: productCategory.category.id
                                                                             });
-                                                                            /*getProductDetailsPromise.push(
-                                                                                this.getProduct(db, link, productCategory.category.id)
-                                                                            );*/
                                                                         });
                                                                     }
                                                                 });
@@ -599,68 +602,8 @@ module.exports = {
                                                                     return {};
                                                                 }
 
-                                                                let linkChunks = [];
-                                                                let chunkSize = 500;
-                                                                let linksChunks = [];
-                                                
-                                                                for (let i = 0; i < links.length; i += chunkSize) {
-                                                                    linksChunks.push({
-                                                                        id: photoChunks.length + 1,
-                                                                        links: links.slice(i, i + chunkSize)
-                                                                    });
-                                                                }
-                                                                linksChunks.forEach((linkChunk) => {
-                                                                    linkChunk.links.forEach((data) => {
-                                                                        getProductDetailsPromise.push(
-                                                                            this.getProduct(db, data.link, data.categoryId)
-                                                                        );
-                                                                    });
-
-                                                                    Promise.all(getProductDetailsPromise).then(
-                                                                        (productDetails) => {
-                                                                            console.log('getProductDetailsPromise: end');
-                                                                            console.log(getProductDetailsPromise.length);
-                                                                            // console.log(productDetails);
-                                                                            return {
-                                                                                success: true,
-                                                                                status: 'green',
-                                                                                message: 'ok',
-                                                                                data: {
-                                                                                    code: 200,
-                                                                                    message: 'ok',
-                                                                                    mainCategories: categories,
-                                                                                    childDatas: childDatas,
-                                                                                    childCategories: childCategories,
-                                                                                    productsDatas: productsDatas,
-                                                                                    productCategories: productCategories,
-                                                                                    productDetails: productDetails
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    );
-                                                                });
-                                                                Promise.all(getProductDetailsPromise).then(
-                                                                    (productDetails) => {
-                                                                        console.log('getProductDetailsPromise: end');
-                                                                        console.log(getProductDetailsPromise.length);
-                                                                        // console.log(productDetails);
-                                                                        return {
-                                                                            success: true,
-                                                                            status: 'green',
-                                                                            message: 'ok',
-                                                                            data: {
-                                                                                code: 200,
-                                                                                message: 'ok',
-                                                                                mainCategories: categories,
-                                                                                childDatas: childDatas,
-                                                                                childCategories: childCategories,
-                                                                                productsDatas: productsDatas,
-                                                                                productCategories: productCategories,
-                                                                                productDetails: productDetails
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                );
+                                                                linksOfProductDetailsChunks = chunkService.chunk(links);
+                                                                return this.getProductDetails(db, linksOfProductDetailsChunks[0].data);
                                                             }
                                                         );
                                                     }
@@ -688,6 +631,36 @@ module.exports = {
                     };
                 }
             );
+    },
+    getProductDetails(db, datas) {
+        return new Promise((resolve, reject) => {
+            if (!datas || datas.length === 0) {
+                return resolve();
+            }
+
+            let getProductDetailsPromise = [];
+            datas.forEach((data) => {
+                getProductDetailsPromise.push(
+                    this.getProduct(db, data.link, data.categoryId)
+                );
+            });
+
+            if (getProductDetailsPromise.length === 0) {
+                return resolve();
+            }
+
+            Promise.all(getProductDetailsPromise).then(
+                (productDetails) => {
+                    console.log(productDetails);
+                    linksOfProductDetailsChunks = linksOfProductDetailsChunks.slice(1, linksOfProductDetailsChunks.length);
+                    resolve(this.getProductDetails(db, linksOfProductDetailsChunks));
+                }
+            ).catch(
+                (err) => {
+                    resolve();
+                }
+            );
+        });
     },
     testParsing(db) {
         return new Promise((resolve, reject) => {

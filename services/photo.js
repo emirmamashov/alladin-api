@@ -54,10 +54,10 @@ module.exports = {
     uploadNetwork (url, fileName) {
         console.log('-------------uploadNetwork-------------', url, fileName);
         return new Promise((resolve, reject) => {
-            let uniqueName = fileName + '_' + Date.now().toString();
+            let uniqueName = Date.now().toString();
             let parseType = url.split('.');
             let imgType = parseType[parseType.length-1];
-            let newurl = config.UPLOAD_DIR+'/' + uniqueName.replace('/', '') + '.' + imgType;
+            let newurl = config.UPLOAD_DIR+'/' + uniqueName + '.' + imgType;
             console.log(newurl);
             let streamReq = request(url).on('response', (response, err) => {
                 console.log('---------request download in network----------');
@@ -68,7 +68,7 @@ module.exports = {
                         if (err) {
                             return resolve();
                         }
-                        resolve('/uploads'+newurl.replace(config.UPLOAD_DIR, ''));
+                        resolve('/uploads' + newurl.replace(config.UPLOAD_DIR, ''));
                     });
                 } else {
                     resolve();

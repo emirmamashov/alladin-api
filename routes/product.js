@@ -4,6 +4,9 @@ let XLSX = require('xlsx');
 let mongoose = require('mongoose');
 let ObjectId = mongoose.Types.ObjectId;
 let xray = require('x-ray')();
+let async = require('async');
+
+let countG = 6;
 
 
 // services
@@ -555,6 +558,81 @@ module.exports = (app, db) => {
             beginParser: '...'
         });
     });
+
+    router.get('/parser/parsing-from-pionerkgtest', (req, res) => {
+        res.status(200).json({
+            beginParser: '...'
+        });
+        let parserRes = [];
+        /*
+        parserService.testParsing(db).then(
+            (results) => {
+                parserRes.push(results);
+                parserService.testParsing(db).then(
+                    (results2) => {
+                        parserRes.push(results2);
+                        parserService.testParsing(db).then(
+                            (results3) => {
+                                parserRes.push(results3);
+                                parserService.testParsing(db).then(
+                                    (results4) => {
+                                        parserRes.push(results4);
+                                        parserService.testParsing(db).then(
+                                            (results5) => {
+                                                parserRes.push(results5);
+
+                                                console.log('итог спарсено: ' + results5.filter(x => !x).length);
+                                                console.log('итог не спарсено: ' + results5.filter(x => x).length);
+                                            }
+                                        );
+                                    }
+                                );
+                            }
+                        );
+                    }
+                );
+            }
+        );
+        */
+        test();
+    });
+
+    router.get('/parser/parsing-from-pionerkgtestpaginate', (req, res) => {
+        res.status(200).json({
+            beginParser: '...'
+        });
+        parserService.getProductsLink(db, 'http://pioner.kg/catalog/elektrika_i_osveshchenie/sistema_elektromontazha_1/vyklyuchateli/', '').then(
+            (results) => {
+                console.log(results);
+
+                console.log(results.productsLink.length);
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+            }
+        );
+    });
+    function test() {
+        parserService.testParsing(db).then(
+            (results) => {
+                countG--;
+                if (countG > 0) {
+                    console.log('next');
+                    test();
+                } else {
+                    console.log('-----end----');
+                }
+                return results;
+                // console.log('итог спарсено: ' + results5.filter(x => !x).length);
+                // console.log('итог не спарсено: ' + results5.filter(x => x).length);
+            }
+        ).catch(
+            (err) => {
+                resolve();
+            }
+        );
+    }
 
     app.use('/products', router);
 }

@@ -1,6 +1,8 @@
 let xray = require('x-ray')();
+let phantom = require('x-ray-phantom');
 let url = 'http://pioner.kg/catalog';
 let rootUrl = 'http://pioner.kg';
+let async = require('async');
 
 // services
 let photoService = require('../services/photo');
@@ -160,8 +162,8 @@ module.exports = {
         return new Promise((resolve, reject) => {
             //console.log(link, 'file: /services/parser.js, line:156');
             xray(link, '.middle .container@html')((err, results) => {
-                console.log(link, 'file: /services/parser.js, line:156');
-                console.log(results?true:false, 'file: /services/parser.js, line:158');
+                console.log(link, 'file: /services/parser.js, line:162');
+                console.log(results?true:false, 'file: /services/parser.js, line:164');
                 if (!results) {
                     return resolve({
                         categoryName: '',
@@ -170,7 +172,7 @@ module.exports = {
                     });
                 }
                 xray(results, 'h1')((err, categoryName) => {
-                    console.log('----------' + categoryName, 'file: /services/parser.js, line:166');
+                    console.log('categoryName = ' + categoryName, 'file: /services/parser.js, line:166');
                     if (!categoryName) {
                         return resolve({
                             categoryName: '',
@@ -179,7 +181,7 @@ module.exports = {
                         });
                     }
 
-                    xray(results, '.image_wrapper_block', ['a@href'])((err, productsLink) => {
+                    xray(results, '.catalog_block .image_wrapper_block', ['a@href'])((err, productsLink) => {
                         if (!productsLink) {
                             return resolve({
                                 categoryName: categoryName,
@@ -187,10 +189,77 @@ module.exports = {
                                 categoryId: categoryId
                             });
                         }
-                        resolve({
-                            categoryName: categoryName,
-                            productsLink: productsLink,
-                            categoryId: categoryId
+
+                        xray(results, '.module-pagination .flex-direction-nav .flex-nav-next a@href')((err, nextPageLink) =>{
+                            if (!nextPageLink) {
+                                return resolve({
+                                    categoryName: categoryName,
+                                    productsLink: productsLink,
+                                    categoryId: categoryId
+                                });
+                            }
+                            resolve(this.nextPage(nextPageLink, {
+                                categoryName: categoryName,
+                                productsLink: productsLink,
+                                categoryId: categoryId
+                            }));
+                        });
+                    });
+                });
+            });
+        });
+    },
+
+    nextPage(link, data) {
+        return new Promise((resolve, reject) => {
+            if (!link) {
+                return resolve({
+                        categoryName: data.categoryName,
+                        productsLink: data.productsLink,
+                        categoryId: data.categoryId
+                    });
+            }
+            xray(link, '.middle .container@html')((err, results) => {
+                if (!results) {
+                    return resolve(
+                        {
+                            categoryName: data.categoryName,
+                            productsLink: data.productsLink,
+                            categoryId: data.categoryId
+                        }
+                    );
+                }
+                xray(results, '.catalog_block .image_wrapper_block', ['a@href'])((err, productsLink) =>{
+                    if (!productsLink) {
+                        return resolve(
+                            {
+                                categoryName: data.categoryName,
+                                productsLink: data.productsLink,
+                                categoryId: data.categoryId
+                            }
+                        );
+                    }
+
+                    xray(results, '.ajax_load .module-pagination .flex-direction-nav .disabled a@href')((err, disabledNextPageLink) =>{
+                        if (disabledNextPageLink) {
+                            return resolve(
+                                {
+                                    categoryName: data.categoryName,
+                                    productsLink: data.productsLink.concat(productsLink),
+                                    categoryId: data.categoryId
+                                }
+                            );
+                        }
+                        xray(results, '.ajax_load .module-pagination .flex-direction-nav .flex-nav-next a@href')((err, nextPageLink) =>{
+                            if (!nextPageLink) {
+                                return resolve(productsLinks);
+                            }
+                            resolve(this.nextPage(nextPageLink, 
+                                {
+                                    categoryName: data.categoryName,
+                                    productsLink: data.productsLink.concat(productsLink),
+                                    categoryId: data.categoryId
+                                }));
                         });
                     });
                 });
@@ -200,76 +269,47 @@ module.exports = {
 
     getProduct(db, link, categoryId) {
         return new Promise((resolve, reject) => {
-            console.log(link, 'file: /services/parser.js, line:124');
             xray(link, '.middle .container@html')((err, results) => {
                 // console.log(results);
+                // console.log(results?true:false, 'file: /services/parser.js, line:205');
+                // console.log(link, 'file: /services/parser.js, line:206');
                 if (err || !results) {
-                    return resolve();
+                    return resolve({
+                        success: results?true:false,
+                        results: results,
+                        error: err
+                    });
                 }
                 xray(results, 'h1')((err, productName) => {
-                    console.log(productName, 'file: /services/parser.js, line:129');
+                    // console.log('productName= ' + productName, 'file: /services/parser.js, line:211');
                     if (err || !productName) {
                         return resolve();
                     }
 
                     xray(results, '.catalog_detail .price')((err, price) => {
-                        console.log(price.replace(/\s*/g, ''), 'file: /services/parser.js, line:134');
-                        if (err) {
-                            return resolve();
-                        }
+                        // console.log(price.replace(/\s*/g, ''), 'file: /services/parser.js, line:216');
                         xray(results, '.tabs_section .detail_text')((err, details) => {
                             let parsePrice = price.replace(/\s*/g, '').replace(/[^-0-9]/gim,'');
-                            console.log(parsePrice, 'file: /services/parser.js, line:137');
+                            // console.log(parsePrice, 'file: /services/parser.js, line:222');
                             let product = {
                                 name: productName,
                                 price: parsePrice,
                                 description: details,
                                 categoryId: categoryId
                             };
-                            console.log(details, 'file: /services/parser.js, line:137');
+                            // console.log(details, 'file: /services/parser.js, line:137');
                             
                             xray(results, '.catalog_detail .current img@src')((err, imgUrl) => {
-                                if (imgUrl) {
-                                    // imgUrl = rootUrl + imgUrl;
-                                    console.log(imgUrl);
-                                    photoService.uploadNetwork(imgUrl, productName).then(
-                                        (saveUrl) => {
-                                            product.image = saveUrl;
-                                            this.findProduct(db, product).then(
-                                                (product) => {
-                                                    resolve(product);
-                                                }
-                                            ).catch(
-                                                (err) => {
-                                                    return resolve();
-                                                }
-                                            );
-                                        }
-                                    ).catch(
-                                        (err) => {
-                                            console.log(err, 'file: service/parser.js, line: 168');
-                                            this.findProduct(db, product).then(
-                                                (product) => {
-                                                    resolve(product);
-                                                }
-                                            ).catch(
-                                                (err) => {
-                                                    return resolve();
-                                                }
-                                            );
-                                        }
-                                    );
-                                } else {
-                                    this.findProduct(db, product).then(
-                                        (product) => {
-                                            resolve(product);
-                                        }
-                                    ).catch(
-                                        (err) => {
-                                            return resolve();
-                                        }
-                                    );
-                                }
+                                product.image = imgUrl;
+                                this.findProduct(db, product).then(
+                                    (findProduct) => {
+                                        resolve(findProduct);
+                                    }
+                                ).catch(
+                                    (err) => {
+                                        return resolve(product);
+                                    }
+                                );
                             });
                             
                         });
@@ -280,16 +320,37 @@ module.exports = {
     },
     findProduct(db, product) {
         return new Promise((resolve, reject) => {
-            console.log(product, '----file: /service/parser.js, line: 167');
+            // console.log(product, '----file: /service/parser.js, line: 253');
             if (!db || !product || !product.name || !product.price) {
-                console.log('Неправильно переданы параметры, ----------file: /services/parser.js, line: 158');
+                console.log('Неправильно переданы параметры, ----------file: /services/parser.js, line: 255');
                 return resolve();
             }
             db.Product.findOne({name: product.name}).then(
                 (findProduct) => {
                     if(!findProduct) {
                         let newProduct = new db.Product(product);
-                        newProduct.images = [product.image];
+                        if (product.image) {
+                            return photoService.uploadNetwork(product.image, productName).then(
+                                (saveUrl) => {
+                                    newProduct.image = saveUrl;
+                                    newProduct.images = [product.image];
+                                    
+                                    newProduct.save().then(
+                                        (savedProduct) => {
+                                            return resolve(savedProduct);
+                                        }
+                                    ).catch(
+                                        (err) => {
+                                            return resolve();
+                                        }
+                                    );
+                                }
+                            ).catch(
+                                (err) => {
+                                    return resolve();
+                                }
+                            );
+                        }
                         newProduct.save().then(
                             (savedProduct) => {
                                 resolve(savedProduct);
@@ -300,18 +361,40 @@ module.exports = {
                             }
                         );
                     } else {
-                        findProduct.image = product.image;
-                        findProduct.description = product.description;
-                        findProduct.images = [product.image];
-                        findProduct.save().then(
-                            (savedProduct) => {
-                                resolve(savedProduct);
-                            }
-                        ).catch(
-                            (err) => {
-                                return resolve();
-                            }
-                        );
+                        if (findProduct.image) {
+                            findProduct.description = product.description;
+                            findProduct.save().then(
+                                (savedProduct) => {
+                                    resolve(savedProduct);
+                                }
+                            ).catch(
+                                (err) => {
+                                    return resolve(findProduct);
+                                }
+                            );
+                        } else {
+                            findProduct.description = product.description;
+                            photoService.uploadNetwork(product.image, productName).then(
+                                (saveUrl) => {
+                                    findProduct.image = saveUrl;
+                                    findProduct.images = [product.image];
+                                    
+                                    findProduct.save().then(
+                                        (savedProduct) => {
+                                            return resolve(savedProduct);
+                                        }
+                                    ).catch(
+                                        (err) => {
+                                            return resolve(findProduct);
+                                        }
+                                    );
+                                }
+                            ).catch(
+                                (err) => {
+                                    return resolve(findProduct);
+                                }
+                            );
+                        }
                     }
                 }
             ).catch(
@@ -443,8 +526,6 @@ module.exports = {
                                                     }
                                                 });
 
-                                                console.log(getProductsLinkForChildCategory.length);
-
                                                 if (getProductsLinkForChildCategory.length === 0) {
                                                     return {
                                                         success: true,
@@ -500,22 +581,69 @@ module.exports = {
                                                                     return {};
                                                                 }
                                                                 let getProductDetailsPromise = [];
+                                                                let links = [];
                                                                 productCategories.forEach((productCategory) => {
                                                                     if (productCategory && productCategory.productsLink && productCategory.productsLink.length > 0) {
                                                                         productCategory.productsLink.forEach((link) => {
-                                                                            getProductDetailsPromise.push(
+                                                                            links.push({
+                                                                                link: link,
+                                                                                categoryId: productCategory.category.id
+                                                                            });
+                                                                            /*getProductDetailsPromise.push(
                                                                                 this.getProduct(db, link, productCategory.category.id)
-                                                                            );
+                                                                            );*/
                                                                         });
                                                                     }
                                                                 });
                                                                 if (getProductDetailsPromise.length === 0) {
                                                                     return {};
                                                                 }
+
+                                                                let linkChunks = [];
+                                                                let chunkSize = 500;
+                                                                let linksChunks = [];
+                                                
+                                                                for (let i = 0; i < links.length; i += chunkSize) {
+                                                                    linksChunks.push({
+                                                                        id: photoChunks.length + 1,
+                                                                        links: links.slice(i, i + chunkSize)
+                                                                    });
+                                                                }
+                                                                linksChunks.forEach((linkChunk) => {
+                                                                    linkChunk.links.forEach((data) => {
+                                                                        getProductDetailsPromise.push(
+                                                                            this.getProduct(db, data.link, data.categoryId)
+                                                                        );
+                                                                    });
+
+                                                                    Promise.all(getProductDetailsPromise).then(
+                                                                        (productDetails) => {
+                                                                            console.log('getProductDetailsPromise: end');
+                                                                            console.log(getProductDetailsPromise.length);
+                                                                            // console.log(productDetails);
+                                                                            return {
+                                                                                success: true,
+                                                                                status: 'green',
+                                                                                message: 'ok',
+                                                                                data: {
+                                                                                    code: 200,
+                                                                                    message: 'ok',
+                                                                                    mainCategories: categories,
+                                                                                    childDatas: childDatas,
+                                                                                    childCategories: childCategories,
+                                                                                    productsDatas: productsDatas,
+                                                                                    productCategories: productCategories,
+                                                                                    productDetails: productDetails
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    );
+                                                                });
                                                                 Promise.all(getProductDetailsPromise).then(
                                                                     (productDetails) => {
                                                                         console.log('getProductDetailsPromise: end');
-                                                                        console.log(productDetails);
+                                                                        console.log(getProductDetailsPromise.length);
+                                                                        // console.log(productDetails);
                                                                         return {
                                                                             success: true,
                                                                             status: 'green',
@@ -560,5 +688,43 @@ module.exports = {
                     };
                 }
             );
+    },
+    testParsing(db) {
+        return new Promise((resolve, reject) => {
+            let testParsingPromise = [];
+            for(let i=0; i<500; i++) {
+                testParsingPromise.push(this.getProduct(db, 'http://pioner.kg/catalog/tovary_dlya_doma_i_byta/pitanie/napitki/fanta_kulpunay_0_5_l_281300/'));
+            }
+
+            Promise.all(testParsingPromise).then(
+                (results) => {
+                    console.log('спарсено: ' +results.filter(x => !x).length);
+                    console.log('не спарсено: ' +results.filter(x => x).length);
+                    resolve(results);
+                }
+            ).catch(
+                (err) => {
+                    console.log(err);
+                    resolve();
+                }
+            );
+        });
+    },
+
+    test() {
+        return new Promise((resolve, reject) => {
+                parserService.testParsing(db).then(
+                    (results) => {
+                        resolve(results);
+                        // console.log('итог спарсено: ' + results5.filter(x => !x).length);
+                        // console.log('итог не спарсено: ' + results5.filter(x => x).length);
+                    }
+                ).catch(
+                    (err) => {
+                        resolve();
+                    }
+                );
+            }
+        );
     }
 }

@@ -6,7 +6,7 @@ let photoService = require('../services/photo');
 let chunkService = require('../services/chunk');
 
 // global
-let chunkSize = 200;
+let chunkSize = 100;
 let linksOfProductDetailsChunks = [];
 let url = 'http://pioner.kg/catalog';
 let rootUrl = 'http://pioner.kg';

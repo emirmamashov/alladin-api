@@ -22,9 +22,12 @@ module.exports = {
                 parser.parseString(body, function (err, result) {
                     console.log(result);
                     console.log('Done');
+                    if (!result) {
+                        return resolve();
+                    }
                     result = result.CurrencyRates;
-                    if (!result && result.Currency && result.Currency.length > 0) {
-                        reject('result not have');
+                    if (!result || !result.Currency || result.Currency.length === 0) {
+                        return resolve();
                     }
 
                     let newExchange = {};

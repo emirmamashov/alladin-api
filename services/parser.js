@@ -10,6 +10,7 @@ let chunkSize = 200;
 let linksOfProductDetailsChunks = [];
 let url = 'http://pioner.kg/catalog';
 let rootUrl = 'http://pioner.kg';
+let countImportProducts = 0;
 
 // parser for pioner.kg
 module.exports = {
@@ -275,14 +276,10 @@ module.exports = {
         return new Promise((resolve, reject) => {
             xray(link, '.middle .container@html')((err, results) => {
                 // console.log(results);
-                // console.log(results?true:false, 'file: /services/parser.js, line:205');
-                // console.log(link, 'file: /services/parser.js, line:206');
+                console.log(results?true:false, 'file: /services/parser.js, line:205');
+                console.log(link, 'file: /services/parser.js, line:206');
                 if (err || !results) {
-                    return resolve({
-                        success: results?true:false,
-                        results: results,
-                        error: err
-                    });
+                    return resolve();
                 }
                 xray(results, 'h1')((err, productName) => {
                     // console.log('productName= ' + productName, 'file: /services/parser.js, line:211');
@@ -291,7 +288,7 @@ module.exports = {
                     }
 
                     xray(results, '.catalog_detail .price')((err, price) => {
-                        // console.log(price.replace(/\s*/g, ''), 'file: /services/parser.js, line:216');
+                        console.log(price.replace(/\s*/g, ''), 'file: /services/parser.js, line:294');
                         xray(results, '.tabs_section .detail_text')((err, details) => {
                             let parsePrice = price.replace(/\s*/g, '').replace(/[^-0-9]/gim,'');
                             // console.log(parsePrice, 'file: /services/parser.js, line:222');
@@ -306,12 +303,12 @@ module.exports = {
                             xray(results, '.catalog_detail .current img@src')((err, imgUrl) => {
                                 product.image = imgUrl;
                                 this.findProduct(db, product).then(
-                                    (findProduct) => {
-                                        resolve(findProduct);
+                                    (saveProduct) => {
+                                        resolve(saveProduct);
                                     }
                                 ).catch(
                                     (err) => {
-                                        return resolve(product);
+                                        resolve();
                                     }
                                 );
                             });
@@ -325,19 +322,19 @@ module.exports = {
     findProduct(db, product) {
         return new Promise((resolve, reject) => {
             // console.log(product, '----file: /service/parser.js, line: 253');
-            if (!db || !product || !product.name || !product.price) {
-                console.log('Неправильно переданы параметры, ----------file: /services/parser.js, line: 255');
+            if (!db || !product || !product.name) {
+                console.log('Неправильно переданы параметры, ----------file: /services/parser.js, line: 317');
                 return resolve();
             }
             db.Product.findOne({name: product.name}).then(
                 (findProduct) => {
                     if(!findProduct) {
                         let newProduct = new db.Product(product);
-                        if (product.image) {
-                            return photoService.uploadNetwork(product.image, productName).then(
+                        if (newProduct.image) {
+                            photoService.uploadNetwork(newProduct.image, newProduct.name).then(
                                 (saveUrl) => {
                                     newProduct.image = saveUrl;
-                                    newProduct.images = [product.image];
+                                    newProduct.images = [newProduct.image];
                                     
                                     newProduct.save().then(
                                         (savedProduct) => {
@@ -354,16 +351,17 @@ module.exports = {
                                     return resolve();
                                 }
                             );
+                        } else {
+                            newProduct.save().then(
+                                (savedProduct) => {
+                                    resolve(savedProduct);
+                                }
+                            ).catch(
+                                (err) => {
+                                    return resolve();
+                                }
+                            );
                         }
-                        newProduct.save().then(
-                            (savedProduct) => {
-                                resolve(savedProduct);
-                            }
-                        ).catch(
-                            (err) => {
-                                return resolve();
-                            }
-                        );
                     } else {
                         if (findProduct.image) {
                             findProduct.description = product.description;
@@ -382,7 +380,7 @@ module.exports = {
                                 (saveUrl) => {
                                     findProduct.image = saveUrl;
                                     findProduct.images = [product.image];
-                                    
+
                                     findProduct.save().then(
                                         (savedProduct) => {
                                             return resolve(savedProduct);
@@ -584,7 +582,6 @@ module.exports = {
                                                                 if (!productCategories || productCategories.length === 0) {
                                                                     return {};
                                                                 }
-                                                                let getProductDetailsPromise = [];
                                                                 let links = [];
                                                                 productCategories.forEach((productCategory) => {
                                                                     if (productCategory && 
@@ -598,12 +595,15 @@ module.exports = {
                                                                         });
                                                                     }
                                                                 });
-                                                                if (getProductDetailsPromise.length === 0) {
-                                                                    return {};
-                                                                }
 
-                                                                linksOfProductDetailsChunks = chunkService.chunk(links);
-                                                                return this.getProductDetails(db, linksOfProductDetailsChunks[0].data);
+                                                                console.log(links.length);
+
+                                                                linksOfProductDetailsChunks = chunkService.chunk(links, 200);
+                                                                this.getProductDetails(db, linksOfProductDetailsChunks[0].data).then(
+                                                                    (resProductImport) => {
+                                                                        console.log(resProductImport.length);
+                                                                    }
+                                                                );
                                                             }
                                                         );
                                                     }
@@ -640,9 +640,11 @@ module.exports = {
 
             let getProductDetailsPromise = [];
             datas.forEach((data) => {
-                getProductDetailsPromise.push(
-                    this.getProduct(db, data.link, data.categoryId)
-                );
+                if (data.link) {
+                    getProductDetailsPromise.push(
+                        this.getProduct(db, data.link, data.categoryId)
+                    );
+                }
             });
 
             if (getProductDetailsPromise.length === 0) {
@@ -651,9 +653,12 @@ module.exports = {
 
             Promise.all(getProductDetailsPromise).then(
                 (productDetails) => {
-                    console.log(productDetails);
+                    console.log('----- getProductDetailsPromise end -----');
+                    countImportProducts = + productDetails.filter(x => x).length;
+                    console.log('----Товары импортированные' + productDetails.filter(x => x).length);
+                    console.log('----Все Товары импортированные' +countImportProducts);
                     linksOfProductDetailsChunks = linksOfProductDetailsChunks.slice(1, linksOfProductDetailsChunks.length);
-                    resolve(this.getProductDetails(db, linksOfProductDetailsChunks));
+                    resolve(this.getProductDetails(db, linksOfProductDetailsChunks[0].data));
                 }
             ).catch(
                 (err) => {

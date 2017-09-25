@@ -8,6 +8,7 @@ let categoryForm = require('../forms/category');
 
 // services
 let photoService = require('../services/photo');
+let categoryService = require('../services/category');
 
 module.exports = (app, db) => {
     let filters = app.get('filters');
@@ -467,6 +468,14 @@ module.exports = (app, db) => {
                 });
             }
         );
+    });
+
+    router.get('/setcategory-level', (req, res) => {
+        categoryService.setLevelCategories(db);
+        res.status(200).json({
+            success: true,
+            data: 'start...'
+        });
     });
 
     app.use('/categories', router);

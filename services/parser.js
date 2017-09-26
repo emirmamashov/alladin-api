@@ -117,7 +117,7 @@ module.exports = {
                                 }
                             );
                     } else {
-                        if (category.parentCategory) {
+                        if (category.parentCategory && !findedCategory.parentCategory) {
                             findedCategory.parentCategory = category.parentCategory;
                             findedCategory.save().then(
                                 (savedCategory) => {

@@ -2,14 +2,15 @@ module.exports = {
     setLevelCategories(db) {
         db.Category.find({ parentCategory: null }).then(
             (parentCategories) => {
+                if (!parentCategories || parentCategories.length === 0) {
+                    return;
+                }
+
                 let parentCategoryIds = [];
                 parentCategories.forEach((category) => {
                     parentCategoryIds.push(category.id);
-
-                    if (category.level !== 0) {
-                        category.level = 0;
-                        category.save();
-                    }
+                    category.level = 0;
+                    category.save();
                 });
 
                 this.setCategoryLevelForChildren(db, parentCategoryIds, 1);

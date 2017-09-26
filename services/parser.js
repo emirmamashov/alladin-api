@@ -131,7 +131,7 @@ module.exports = {
                             ).catch(
                                 (err) => {
                                     resolve({
-                                        category: '',
+                                        category: findedCategory,
                                         parentCategory: category.parentCategory,
                                         childCategoriesLink: category.childCategoriesLink,
                                         productsLink: category.productsLink

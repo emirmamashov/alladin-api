@@ -400,15 +400,21 @@ module.exports = {
                                     );
                                 }
                             } else {
-                                if (findProduct.price && exchange && exchange.usd) {
+                                let categoryIdsNotChangePrice = [
+                                    '59c3e813f901dd3cb699910c', '59c3e813f901dd3cb6999114', '59c3e813f901dd3cb69990ca',
+                                    '59c3e813f901dd3cb69990e6', '59c3e813f901dd3cb69990fa', '59c3e813f901dd3cb699910d',
+                                    '59c3e69cf901dd3cb69990aa'
+                                ];
+                                let findCategory = categoryIdsNotChangePrice.filter(x => x == findCategory.parentCategory);
+                                if (findCategory.length == 0 && findProduct.price && exchange && exchange.usd) {
                                     findProduct.price = (findProduct.price / exchange.usd).toFixed(2);
+                                    findProduct.description = product.description;
                                 }
 
                                 if (findProduct.image) {
-                                    findProduct.description = product.description;
                                     findProduct.save().then(
                                         (savedProduct) => {
-                                            resolve(savedProduct);
+                                            return resolve(savedProduct);
                                         }
                                     ).catch(
                                         (err) => {
@@ -416,7 +422,6 @@ module.exports = {
                                         }
                                     );
                                 } else {
-                                    findProduct.description = product.description;
                                     photoService.uploadNetwork(product.image, productName).then(
                                         (saveUrl) => {
                                             findProduct.image = saveUrl;

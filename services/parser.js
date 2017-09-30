@@ -17,7 +17,7 @@ module.exports = {
     getMainCategories() {
         return new Promise((resolve, reject) => {
             xray(url, '.section_info ul', ['.name a@href'])((err, mainCategroies) => {
-                console.log(mainCategroies, 'file: /services/parser.js, line:13');
+                console.log(mainCategroies, 'file: /services/parser.js, line:20');
                 if (err) {
                     reject('Что то пошло не так! Пожалуйста обратитесь к разработчику emir.mamashov@gmail.com');
                 }
@@ -70,6 +70,38 @@ module.exports = {
                     });
                 });
             });
+        });
+    },
+
+    getChildCategoriesRecursive(data) {
+        /*data = {
+            categoryId: data.category.id, // string
+            chunkChildCategoriesLink: [],// Array<>
+            results: []
+        }*/
+        return new Promise((resolve, reject) => {
+            if (!data || !data.chunkChildCategoriesLink || data.chunkChildCategoriesLink.length < 1) {
+                console.log('parameters not valid');
+                return resolve(data.results);
+            }
+
+            let getChildCategoriesPromise = [];
+            data.chunkChildCategoriesLink[0].forEach((datas) => {
+                getChildCategoriesPromise.push(this.getChildCategories(datas.data, data.categoryId));
+            });
+
+            Promise.all(getChildCategoriesPromise).then(
+                (results) => {
+                    data.results = data.results.join(results);
+                    data.chunkChildCategoriesLink = data.chunkChildCategoriesLink.slice(1, data.chunkChildCategoriesLink.length);
+                    return this.getChildCategoriesRecursive(data);
+                }
+            ).catch(
+                (err) => {
+                    console.log(err);
+                    resolve(data.results);
+                }
+            );
         });
     },
     findCategory(db, category) {
@@ -323,22 +355,43 @@ module.exports = {
         return new Promise((resolve, reject) => {
             // console.log(product, '----file: /service/parser.js, line: 253');
             if (!db || !product || !product.name) {
-                console.log('Неправильно переданы параметры, ----------file: /services/parser.js, line: 317');
+                console.log('Неправильно переданы параметры, ----------file: /services/parser.js, line: 326');
                 return resolve();
             }
-            db.Product.findOne({name: product.name}).then(
+            db.Product.findOne({ name: product.name }).then(
                 (findProduct) => {
-                    if(!findProduct) {
-                        let newProduct = new db.Product(product);
-                        if (newProduct.image) {
-                            photoService.uploadNetwork(newProduct.image, newProduct.name).then(
-                                (saveUrl) => {
-                                    newProduct.image = saveUrl;
-                                    newProduct.images = [newProduct.image];
-                                    
+                    db.Exchange.findOne().then(
+                        (exchange) => {
+                            if(!findProduct) {
+                                let newProduct = new db.Product(product);
+                                if (newProduct.price && exchange && exchange.usd) {
+                                    newProduct.price = (newProduct.price / exchange.usd).toFixed(2);
+                                }
+                                if (newProduct.image) {
+                                    photoService.uploadNetwork(newProduct.image, newProduct.name).then(
+                                        (saveUrl) => {
+                                            newProduct.image = saveUrl;
+                                            newProduct.images = [ newProduct.image ];
+                                            
+                                            newProduct.save().then(
+                                                (savedProduct) => {
+                                                    return resolve(savedProduct);
+                                                }
+                                            ).catch(
+                                                (err) => {
+                                                    return resolve();
+                                                }
+                                            );
+                                        }
+                                    ).catch(
+                                        (err) => {
+                                            return resolve();
+                                        }
+                                    );
+                                } else {
                                     newProduct.save().then(
                                         (savedProduct) => {
-                                            return resolve(savedProduct);
+                                            resolve(savedProduct);
                                         }
                                     ).catch(
                                         (err) => {
@@ -346,44 +399,38 @@ module.exports = {
                                         }
                                     );
                                 }
-                            ).catch(
-                                (err) => {
-                                    return resolve();
+                            } else {
+                                if (findProduct.price && exchange && exchange.usd) {
+                                    findProduct.price = (findProduct.price / exchange.usd).toFixed(2);
                                 }
-                            );
-                        } else {
-                            newProduct.save().then(
-                                (savedProduct) => {
-                                    resolve(savedProduct);
-                                }
-                            ).catch(
-                                (err) => {
-                                    return resolve();
-                                }
-                            );
-                        }
-                    } else {
-                        if (findProduct.image) {
-                            findProduct.description = product.description;
-                            findProduct.save().then(
-                                (savedProduct) => {
-                                    resolve(savedProduct);
-                                }
-                            ).catch(
-                                (err) => {
-                                    return resolve(findProduct);
-                                }
-                            );
-                        } else {
-                            findProduct.description = product.description;
-                            photoService.uploadNetwork(product.image, productName).then(
-                                (saveUrl) => {
-                                    findProduct.image = saveUrl;
-                                    findProduct.images = [product.image];
 
+                                if (findProduct.image) {
+                                    findProduct.description = product.description;
                                     findProduct.save().then(
                                         (savedProduct) => {
-                                            return resolve(savedProduct);
+                                            resolve(savedProduct);
+                                        }
+                                    ).catch(
+                                        (err) => {
+                                            return resolve(findProduct);
+                                        }
+                                    );
+                                } else {
+                                    findProduct.description = product.description;
+                                    photoService.uploadNetwork(product.image, productName).then(
+                                        (saveUrl) => {
+                                            findProduct.image = saveUrl;
+                                            findProduct.images = [ product.image ];
+
+                                            findProduct.save().then(
+                                                (savedProduct) => {
+                                                    return resolve(savedProduct);
+                                                }
+                                            ).catch(
+                                                (err) => {
+                                                    return resolve(findProduct);
+                                                }
+                                            );
                                         }
                                     ).catch(
                                         (err) => {
@@ -391,16 +438,18 @@ module.exports = {
                                         }
                                     );
                                 }
-                            ).catch(
-                                (err) => {
-                                    return resolve(findProduct);
-                                }
-                            );
+                            }
                         }
-                    }
+                    ).catch(
+                        (err) => {
+                            console.log(err);
+                            return resolve();
+                        }
+                    );
                 }
             ).catch(
                 (err) => {
+                    console.log(err);
                     return resolve();
                 }
             );
@@ -409,11 +458,13 @@ module.exports = {
     beginParsing(db) {
         this.getMainCategories().then(
             (mainCategroies) => {
-                console.log(mainCategroies, 'file: /router/product.js, line:555');
+                console.log(mainCategroies.length, 'file: /services/parser.js, line:429');
+
                 let getChildCategoriesForMainCategoriesPromise = [];
                 mainCategroies.forEach((mainCategoryLink) => {
                     getChildCategoriesForMainCategoriesPromise.push(this.getChildCategories(mainCategoryLink));
                 });
+
                 Promise.all(getChildCategoriesForMainCategoriesPromise).then(
                     (datas) => {
                         if (!datas || datas.length == 0) {
@@ -421,26 +472,31 @@ module.exports = {
                                 success: false
                             }
                         }
+
                         let findCategoryForMainPromises = [];
                         datas.forEach((data) => {
-                            /* data = {
+                            /* -> data = {
                               parentCategory: parentCategoryName,
                                 childCategories: childCategories
                             }*/
-                            findCategoryForMainPromises.push(this.findCategory(db, {
-                                name: data.parentCategory,
-                                childCategoriesLink: data.childCategories}
-                            ));
+                            findCategoryForMainPromises.push(
+                                this.findCategory(db, 
+                                {
+                                    name: data.parentCategory,
+                                    childCategoriesLink: data.childCategories
+                                })
+                            );
                         });
 
-                        if (findCategoryForMainPromises.length === 0) {
+                        if (findCategoryForMainPromises.length < 1) {
                             return {
                                 success: false
                             }
                         }
+
                         Promise.all(findCategoryForMainPromises).then(
                             (categories) => {
-                                if (!categories || categories.length === 0) {
+                                if (!categories || categories.length < 1) {
                                     return {
                                         success: false
                                     }
@@ -448,13 +504,20 @@ module.exports = {
                                 let findChildCategoriesForChildPromise = [];
                                 categories.forEach((data) => {
                                     if (data.childCategoriesLink && data.childCategoriesLink.length > 0) {
+                                        /*let chunkChildCategoriesLink = chunkService.chunk(data.childCategoriesLink, chunkSize);
+                                        let datas = {
+                                            categoryId: data.category.id,
+                                            chunkChildCategoriesLink: chunkChildCategoriesLink,
+                                            results: []
+                                        }*/
+                                        // findChildCategoriesForChildPromise.push(this.getChildCategoriesRecursive(datas));
                                         data.childCategoriesLink.forEach((link) => {
                                             findChildCategoriesForChildPromise.push(this.getChildCategories(link, data.category.id));
                                         });
                                     }
                                 });
 
-                                if (findChildCategoriesForChildPromise.length === 0) {
+                                if (findChildCategoriesForChildPromise.length < 1) {
                                     return {
                                         success: true,
                                         status: 'green',
@@ -576,6 +639,7 @@ module.exports = {
                                                                 }
                                                             }
                                                         }
+
                                                         Promise.all(findCategoryForProductPromise).then(
                                                             (productCategories) => {
                                                                 console.log('findCategoryForProductPromise: end');
@@ -662,6 +726,7 @@ module.exports = {
                 }
             ).catch(
                 (err) => {
+                    console.log(err);
                     resolve();
                 }
             );

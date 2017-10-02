@@ -21,17 +21,15 @@ validator.async.options = {
 };
 
 module.exports = {
-    dollar: {
+    usd: {
         presence: {
             message: '^Доллар объязательное поле'
         }
     },
-    euro: {
+    eur: {
     },
-    ruble: {
+    rub: {
     },
-    tenge: {
-    },
-    yen: {
+    kzt: {
     }
 };

@@ -250,7 +250,7 @@ module.exports = (app, db) => {
                         }
 
                         category.name = req.body.name ? req.body.name : category.name;
-                        category.parentCategory = ObjectId.isValid(req.body.parentCategory) ? req.body.parentCategory : category.parentCategory;
+                        category.parentCategory = ObjectId.isValid(req.body.parentCategory) ? req.body.parentCategory : null;
                         category.description = req.body.description ? req.body.description : category.description;
                         category.keywords = req.body.keywords ? req.body.keywords : category.keywords;
                         category.author = req.body.author ? req.body.author : category.author;

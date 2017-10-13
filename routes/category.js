@@ -30,7 +30,7 @@ module.exports = (app, db) => {
                 let page = parseInt(req.query.page) || 1;
                 let limit = parseInt(req.query.limit) || count;
                 console.log(req.query, page, limit);
-                db.Category.paginate(query, { page: page, limit: limit, sort: { parentCategory: -1 } },(err, result) => {
+                db.Category.paginate(query, { page: page, limit: limit },(err, result) => {
                     if (err) {
                         console.log(err);
                         return res.status(200).json({
@@ -60,6 +60,7 @@ module.exports = (app, db) => {
             }
         ).catch(
             (err) => {
+                console.log(err);
                 res.status(200).json({
                     success: false,
                     status: 'red',

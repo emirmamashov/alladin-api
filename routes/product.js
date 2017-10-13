@@ -6,6 +6,9 @@ let ObjectId = mongoose.Types.ObjectId;
 let xray = require('x-ray')();
 let async = require('async');
 
+// services
+let productService = require('../services/product');
+
 let countG = 6;
 
 
@@ -612,6 +615,51 @@ module.exports = (app, db) => {
             }
         );
     });
+
+    router.get('/getCountByCategoryId/:categoryId', (req, res) => {
+        let categoryId = req.params.categoryId;
+        if (!categoryId || !ObjectId.isValid(categoryId)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Не найдено',
+                data: {
+                    code: 404,
+                    message: 'not found'
+                }
+            });
+        }
+        productService.getCountProductsByCategoryId(db, categoryId).then(
+            (count) => {
+                console.log(count);
+                return res.status(200).json({
+                    success: true,
+                    status: 'green',
+                    message: 'Не найдено',
+                    data: {
+                        code: 200,
+                        message: 'Success',
+                        data: count
+                    }
+                });
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                return res.status(200).json({
+                    success: false,
+                    status: 'yellow',
+                    message: 'Не найдено',
+                    data: {
+                        code: 500,
+                        message: err,
+                        data: count
+                    }
+                });
+            }
+        );
+    });
+
     function test() {
         parserService.testParsing(db).then(
             (results) => {

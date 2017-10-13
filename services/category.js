@@ -1,3 +1,4 @@
+let categoryIds = [];
 module.exports = {
     setLevelCategories(db) {
         db.Category.find({ parentCategory: null }).then(
@@ -42,5 +43,27 @@ module.exports = {
                 console.log(err);
             }
         );
+    },
+    getAllChildrenCategoriesId(db, parentCategoryIds, categoryIds) {
+        return new Promise((resolve, reject) => {
+            db.Category.find({ parentCategory: { $in: parentCategoryIds } }).then(
+                (childCategories) => {
+                    if (!childCategories || childCategories.length < 1) {
+                        return resolve(categoryIds);
+                    }
+                    let newParentCategoryIds = [];
+                    childCategories.forEach((childCategory) => {
+                        categoryIds.push(childCategory.id);
+                        newParentCategoryIds.push(childCategory.id);
+                    });
+                    return resolve(this.getAllChildrenCategoriesId(db, newParentCategoryIds, categoryIds));
+                }
+            ).catch(
+                (err) => {
+                    console.log(err);
+                    resolve(categoryIds);
+                }
+            );
+        });
     }
 }

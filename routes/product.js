@@ -37,7 +37,7 @@ module.exports = (app, db) => {
             (count) => {
                 console.log(count);
                 
-                db.Product.paginate(query, { page: page, limit: limit },(err, result) => {
+                db.Product.paginate(query, { page: page, limit: limit, sort: { categoryId: -1 } },(err, result) => {
                     if (err) {
                         console.log(err);
                         return res.status(200).json({
@@ -50,19 +50,49 @@ module.exports = (app, db) => {
                             }
                         });
                     }
-                    res.status(200).json({
-                        success: true,
-                        status: 'green',
-                        message: 'Успешно',
-                        data: {
-                            code: 200,
-                            message: 'ok',
-                            data: {
-                                products: result.docs,
-                                allProductCount: count
-                            }
-                        }
+                    let products = result.docs;
+                    let categoryIds = [];
+                    products.forEach((product) => {
+                        categoryIds.push(product.categoryId);
                     });
+                    db.Category.find({ _id: { $in: categoryIds } }).then(
+                        (categories) => {
+                            products.forEach((product) => {
+                                product.category = categories.filter(x => x.id == product.categoryId)[0] || {};
+                            });
+
+                            res.status(200).json({
+                                success: true,
+                                status: 'green',
+                                message: 'Успешно',
+                                data: {
+                                    code: 200,
+                                    message: 'ok',
+                                    data: {
+                                        products: products,
+                                        allProductCount: count
+                                    }
+                                }
+                            });
+                        }
+                    ).catch(
+                        (err) => {
+                            console.log(err);
+                            res.status(200).json({
+                                success: true,
+                                status: 'green',
+                                message: 'Успешно',
+                                data: {
+                                    code: 200,
+                                    message: 'ok',
+                                    data: {
+                                        products: result.docs,
+                                        allProductCount: count
+                                    }
+                                }
+                            });
+                        }
+                    );
                 });
             }
         ).catch(
@@ -78,7 +108,6 @@ module.exports = (app, db) => {
                 });
             }
         );
-        
     });
 
     // get by id

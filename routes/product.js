@@ -8,6 +8,7 @@ let async = require('async');
 
 // services
 let productService = require('../services/product');
+let categoryService = require('../services/category');
 
 let countG = 6;
 
@@ -654,6 +655,86 @@ module.exports = (app, db) => {
                         code: 500,
                         message: err,
                         data: count
+                    }
+                });
+            }
+        );
+    });
+
+    router.get('/getProductsByCategoryId/:categoryId', (req, res) => {
+        let categoryId = req.params.categoryId;
+        if (!categoryId || !ObjectId.isValid(categoryId)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Не найдено',
+                data: {
+                    code: 404,
+                    message: 'not found'
+                }
+            });
+        }
+
+        categoryService.getAllChildrenCategoriesId(db, [categoryId], []).then(
+            (categoryIds) => {
+                let page = parseInt(req.query.page) || 1;
+                let limit = parseInt(req.query.limit) || 20;
+                db.Product.count({ categoryId: { $in: categoryIds } }).then(
+                    (count) => {
+                        db.Product.paginate({ categoryId: { $in: categoryIds } }, { page: page, limit: limit, sort: { categoryId: -1 } },(err, result) => {
+                            if (err) {
+                                console.log(err);
+                                return res.status(200).json({
+                                    success: false,
+                                    status: 'red',
+                                    message: 'Что то пошло не так(',
+                                    data: {
+                                        code: 500,
+                                        message: err
+                                    }
+                                });
+                            }
+        
+                            let products = result.docs;
+        
+                            res.status(200).json({
+                                success: true,
+                                status: 'green',
+                                message: 'Все ок!',
+                                data: {
+                                    code: 200,
+                                    message: 'Ok!',
+                                    data: {
+                                        products: products,
+                                        count: count
+                                    }
+                                }
+                            });
+                        });
+                    }
+                ).catch(
+                    (err) => {
+                        console.log(err);
+                        res.status(200).json({
+                            success: false,
+                            message: 'Что то пошло не так',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                );
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
                     }
                 });
             }

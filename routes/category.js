@@ -479,5 +479,68 @@ module.exports = (app, db) => {
         });
     });
 
+    router.get('/childrenCategories/:parentCategoryId', (req, res) => {
+        let _id = req.params.parentCategoryId;
+        if (!_id || !ObjectId.isValid(_id)) {
+            return res.status(200).json({
+                success: false,
+                status: 'yellow',
+                message: 'Параметер неправильно передано',
+                data: {
+                    code: 403,
+                    message: 'Parameters not valid'
+                }
+            });
+        }
+        db.Category.count({ parentCategory: _id }).then(
+            (count) => {
+                console.log(count);
+                let page = parseInt(req.query.page) || 1;
+                let limit = parseInt(req.query.limit) || 20;
+                console.log(req.query, page, limit);
+                db.Category.paginate({ parentCategory: _id }, { page: page, limit: limit },(err, result) => {
+                    if (err) {
+                        console.log(err);
+                        return res.status(200).json({
+                            success: false,
+                            status: 'red',
+                            message: 'Что то пошло не так(',
+                            data: {
+                                code: 500,
+                                message: err
+                            }
+                        });
+                    }
+                    res.status(200).json({
+                        success: true,
+                        status: 'green',
+                        message: 'Успешно',
+                        data: {
+                            code: 200,
+                            message: 'ok',
+                            data: {
+                                categories: result.docs,
+                                count: count
+                            }
+                        }
+                    });
+                });
+            }
+        ).catch(
+            (err) => {
+                console.log(err);
+                res.status(200).json({
+                    success: false,
+                    status: 'red',
+                    message: 'Что то пошло не так',
+                    data: {
+                        code: 500,
+                        message: err
+                    }
+                });
+            }
+        );
+    });
+
     app.use('/categories', router);
 }

@@ -636,7 +636,7 @@ module.exports = (app, db) => {
                 return res.status(200).json({
                     success: true,
                     status: 'green',
-                    message: 'Не найдено',
+                    message: 'Успешно',
                     data: {
                         code: 200,
                         message: 'Success',

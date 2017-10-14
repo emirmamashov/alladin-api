@@ -675,7 +675,7 @@ module.exports = (app, db) => {
             });
         }
 
-        categoryService.getAllChildrenCategoriesId(db, [categoryId], []).then(
+        categoryService.getAllChildrenCategoriesId(db, [categoryId], [categoryId]).then(
             (categoryIds) => {
                 let page = parseInt(req.query.page) || 1;
                 let limit = parseInt(req.query.limit) || 20;
